@@ -7,5 +7,5 @@ setup(name='weather',
       author='Jake Schrass',
       author_email='jlostinco@tamu.edu',
       license='none',
-      packages=['weather', 'weather.scrapper', 'weather.boom'],
+      packages=['weather', 'weather.scraper', 'weather.boom'],
       zip_safe=False)

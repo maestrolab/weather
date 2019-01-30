@@ -7,9 +7,10 @@ Attempt to make a map plot of a mission across the U.S. with various
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
-year = '2019'
-month = '01'
-day = '30'
+
+year = '2018'
+month = '06'
+day = '18'
 hours = '12'
 filename = year + '_' + month + '_' + day + '_' + hours + '.p'
 all_data = pickle.load(open("../data/weather/" + filename, "rb"))

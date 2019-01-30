@@ -15,7 +15,8 @@ import math
 import csv
 import numpy as np
 
-def scrapper(YEAR, MONTH, DAY, HOUR):
+
+def scraper(YEAR, MONTH, DAY, HOUR):
     start = '{:%H:%M:%S}'.format(datetime.datetime.now())
 
     # Initialize data dictionary
@@ -26,7 +27,6 @@ def scrapper(YEAR, MONTH, DAY, HOUR):
     # Lat, Lon Locations on TwisterData.com grid
     x = np.linspace(13, 14, 1)  # 58, 46)  # lat - (13,58)
     y = np.linspace(-144, -53, 92)  # lon - (-144,-53)
-
 
     for j in range(len(x)):
         for k in range(len(y)):
@@ -77,8 +77,8 @@ def scrapper(YEAR, MONTH, DAY, HOUR):
                 print('Value Error - Invalid Date')
                 # do nothing
     store(all_data, YEAR, MONTH, DAY, HOUR)
-    
-    
+
+
 def store(all_data, YEAR, MONTH, DAY, HOUR):
     # making colums to put into the csv file
     rows = zip(all_data['latitude'], all_data['longitude'],
