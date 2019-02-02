@@ -13,7 +13,7 @@ data, altitudes = process_data(day, month, year, hour, alt,
 
 noise_data = {'latlon': [], 'noise': []}
 
-index = 2337
+index = 2337  # index for worst case scenario
 noise_data['latlon'].append(list(data.keys())[index])
 noise_data['noise'].append(boom_runner(data, altitudes[index], index))
 

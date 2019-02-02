@@ -1,0 +1,5 @@
+Error when recording for: 
+Line components: ['AL', '01001', '00161526', 'Autauga', 'County', '1539614693', '25744269', '594.449', '9.94', '32.532237', '-86.64644']
+type structure: ['string', 'string', 'string', 'string', 'float', 'float', 'float', 'float', 'float']
+index: 4
+header: ['USPS', 'GEOID', 'ANSICODE', 'NAME', 'ALAND', 'AWATER', 'ALAND_SQMI', 'AWATER_SQMI', 'INTPTLAT', 'INTPTLONG']
