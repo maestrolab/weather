@@ -1,5 +1,6 @@
 import pickle
 import numpy as np
+from weather import process_noise
 from weather.boom import boom_runner, process_data
 from weather.plotting.noise import contour
 
@@ -40,6 +41,5 @@ year = '2018'
 hour = '12'
 
 filename = "../data/noise/" + year + "_" + month + "_" + day + "_" + hour
-
-contour(filename, transformation=exterior_annoyance,
-        levels=np.arange(0, 110, 10), label='% More Annoyed')
+data = process_noise(filename, transformation=exterior_annoyance)
+contour(data, levels=np.arange(0, 110, 10), label='% More Annoyed')

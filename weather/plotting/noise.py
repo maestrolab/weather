@@ -13,31 +13,10 @@ import copy
 import random
 from weather import makeFloats
 
-def contour(filename, levels=None, transformation=None, label="Perceived Loudness, PLdB"):
-    noise_data = pickle.load(open(filename + '.p', 'rb'))
-
-    lat = []
-    lon = []
-    latlon = copy.deepcopy(noise_data['latlon'])
-
-    for i in range(len(latlon)):
-        latlon_temp = [int(s) for s in latlon[i].split(',')]
-        lat.append(latlon_temp[0])
-        lon.append(latlon_temp[1])
-
+def contour(data, levels=None, transformation=None, label="Perceived Loudness, PLdB"):
+    lon, lat, z = data.T
     numcols, numrows = len(lon), len(lat)
-
-
-    # REMOVE this when z should be pyLdB input
-    z = copy.deepcopy(noise_data['noise'])
-    if transformation is not None:
-        z = transformation(z)
-    # Make lists into arrays to graph
-    lon = makeFloats(lon)
-    lat = makeFloats(lat)
-    lon = np.array(lon)
-    lat = np.array(lat)
-
+    
     fig = plt.figure(figsize=(12, 6))
 
     # bounds = np.arange(0,110,10) - FIXME to match output
