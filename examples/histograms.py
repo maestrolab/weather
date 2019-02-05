@@ -24,22 +24,24 @@ month = '06'
 year = '2018'
 hour = '12'
 
-filename = "../data/noise/" + year + "_" + month + "_" + day + "_" + hour
+filename = "../data/noise/noise_per_county"
 noise_data = pickle.load(open(filename + '.p', 'rb'))
-z = copy.deepcopy(noise_data['noise'])
+z = copy.deepcopy(noise_data[:, 3])
+pop = noise_data[:, 2]/sum(noise_data[:, 2])
+np.histogram()
 
 fig, ax1 = plt.subplots()
-hist, bins = np.histogram(z, bins=np.arange(76, 90, 2), density=True)
-ax1.hist(z)
+hist, bins = np.histogram(z, bins=np.arange(76, 90, 1), density=True)
+ax1.hist(z, bins=20, color='#0504aa', alpha=0.7, rwidth=0.85, density=True)
 
 ax1.set_xlabel('PL')
 # Make the y-axis label, ticks and tick labels match the line color.
-ax1.set_ylabel('Frequency', color='b')
+ax1.set_ylabel('Probability', color='b')
 ax1.tick_params('y', colors='b')
 
 ax2 = ax1.twinx()
 z2 = exterior_annoyance(z)
-ax2.plot(z, z2, 'r.')
+ax2.plot(z, z2, 'r')
 ax2.set_ylabel('% More Annoyed', color='r')
 ax2.tick_params('y', colors='r')
 

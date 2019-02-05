@@ -16,7 +16,7 @@ import csv
 import numpy as np
 
 
-def balloon_scraper(YEAR, MONTH, DAY, HOUR):
+def balloon_scraper(YEAR, MONTH, DAY, HOUR, directory='./'):
 
     # INPUT YEAR AND MONTH
     YEAR = '2014'
@@ -50,7 +50,7 @@ def balloon_scraper(YEAR, MONTH, DAY, HOUR):
                  '78897', '78954', '78970', '91285', '80222', '82022', '91165',
                  '91285']
 
-    f = open('WBData.csv', 'w')
+    f = open(directory+'WBData.csv', 'w')
     counter_x = 0
     counter_filter = 0
 
@@ -128,14 +128,14 @@ def balloon_scraper(YEAR, MONTH, DAY, HOUR):
 
     f.close()
 
-    f = open("WB" + YEAR + "_" + MONTH + "_" + DAY + ".csv", "w")
+    f = open(directory+"WB" + YEAR + "_" + MONTH + "_" + DAY + ".csv", "w")
     f.write('Latitude' + ',' + 'Longtitude' + ',' + 'Pressure [hPa]' +
             ',' + 'Height [m]' + ',' + 'Temperature [C]' + ',' +
             'Relative Humidity [%]' + ',' + 'Wind Direction [deg]' +
             ',' + 'Wind Speed [knot]' + '\n')
     f.close()
 
-    with open("WBData.csv", "r") as source:
+    with open(directory+"WBData.csv", "r") as source:
         rdr = csv.reader(source)
         with open("WB" + YEAR + "_" + MONTH + "_" + DAY + ".csv", "a") as result:
             wtr = csv.writer(result)
