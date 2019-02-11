@@ -1,6 +1,8 @@
 README.md
+setup.py
 weather/__init__.py
 weather/core.py
+weather/filehandling.py
 weather.egg-info/PKG-INFO
 weather.egg-info/SOURCES.txt
 weather.egg-info/dependency_links.txt
@@ -8,5 +10,5 @@ weather.egg-info/not-zip-safe
 weather.egg-info/top_level.txt
 weather/boom/__init__.py
 weather/boom/core.py
-weather/scrapper/__init__.py
-weather/scrapper/core.py
+weather/scraper/__init__.py
+weather/scraper/core.py
