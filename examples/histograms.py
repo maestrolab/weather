@@ -34,7 +34,7 @@ pop = noise_data[:, 2]/sum(noise_data[:, 2])
 annoyance = exterior_annoyance(noise)
 
 # Organizing data
-hist, bins = np.histogram(noise, bins=np.arange(79, 89, .1), density=True)
+hist, bins = np.histogram(noise, bins=np.arange(79, 89, .5), density=True)
 inds = np.digitize(noise, bins)
 pop_level = np.zeros(len(bins))
 annoyance_level = np.zeros(len(bins))
@@ -48,15 +48,15 @@ print('pop', pop_level)
 fig, ax1 = plt.subplots()
 
 # ax2.plot(z, z2, 'r')
-ax1.bar(bins, pop_level, color='b', width=0.4, label='Population')
+ax1.bar(bins, pop_level, color='b', width=0.4, label='Exposed population')
 ax1.bar(bins, annoyance_level, color='r', width=0.4, label='Population annoyed')
 ax1.set_ylabel('Perceived loudness/Annoyance distribution', color='r')
 ax1.tick_params('y', colors='r')
 
 kde = gaussian_kde(noise)
 x = np.linspace(79, 89, 200)
-ax1.plot(x, kde(x), '--k', lw=3, label='PL probability')
-ax1.set_xlabel('PL')
+ax1.plot(x, kde(x), '--k', lw=3, label='PLdB probability')
+ax1.set_xlabel('Perceived Loudness in dB')
 # Make the y-axis label, ticks and tick labels match the line color.
 ax1.set_ylabel('Probability', color='k')
 ax1.tick_params('y', colors='k')

@@ -5,34 +5,19 @@ from weather.boom import boom_runner, process_data
 from weather.plotting.noise import contour
 
 
-def exterior_annoyance(PL):
-    PL = np.asarray(PL)
-    annoyance = np.zeros(PL.shape)
-    for i in range(len(PL)):
-        PL_0 = 72.412
-        slope = 5.7410605
-        if PL[i] <= PL_0:
-            annoyance[i] = 0
-        elif PL[i] < 89.866:
-            annoyance[i] = slope*(PL[i]-PL_0)
-        else:
-            annoyance[i] = 100
-    return(annoyance)
-
-
-def interior_annoyance(PL):
-    PL = np.asarray(PL)
-    annoyance = np.zeros(PL.shape)
-    for i in range(len(PL)):
-        PL_0 = 44.475
-        slope = 4.536
-        if PL[i] <= PL_0:
-            annoyance[i] = 0
-        elif PL[i] < 55.519:
-            annoyance[i] = slope*(PL[i]-PL_0)
-        else:
-            annoyance[i] = 100
-    return(annoyance)
+def fidell_CTL(noise, growth=0.47, CTL=81.3, A_star=None):
+    noise = np.asarray(noise)
+    # for A star
+    if CTL is None:
+        CTL = -10*np.log10(-np.log(0.5))/growth + A_star/growth
+        m = (10.**(CTL/10.))**growth
+        A = - m*np.log(0.5)
+    else:
+        A_star = growth*CTL + 10*np.log10(-np.log(0.5))
+        A = 10**(A_star/10)
+    m = (10.**(noise/10.))**growth
+    P = np.exp(-A/m)
+    return P*100
 
 
 day = '18'
@@ -41,5 +26,5 @@ year = '2018'
 hour = '12'
 
 filename = "../data/noise/" + year + "_" + month + "_" + day + "_" + hour
-data = process_noise(filename, transformation=exterior_annoyance)
-contour(data, levels=np.arange(0, 110, 10), label='% More Annoyed')
+data = process_noise(filename, transformation=fidell_CTL)
+contour(data, levels=np.arange(0, 110, 10), label='% Hightly Annoyed')
