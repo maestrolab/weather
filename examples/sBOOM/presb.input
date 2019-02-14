@@ -1,9 +1,9 @@
 signature.data   signature_filename
 1.6          mach_number
-33667.97900262467   altitude
-108.00525280000001   propagation_start
-10000        propagation_points
-1200         padding_points
+10262.0      altitude
+540.0262640000001   propagation_start
+40000        propagation_points
+8000         padding_points
 1            nonlinear
 1            thermoviscous
 1            relaxation
@@ -38,7 +38,7 @@ signature.data   signature_filename
 936.0   -7.284580455430227
 1627.0  -8.868184902262884
 2375.0  -12.972296066734149
-3190.0  -15.385952272783433
+3190.0  -15.385952272783431
 4079.0  -16.100513571542496
 5059.0  -13.960635602774778
 6151.0  -16.64775639920926

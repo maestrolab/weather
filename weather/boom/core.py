@@ -181,11 +181,11 @@ def output_for_sBoom(li, keyName, ALT, lat, lon, height, data):
                 temp_li.append(li[i])
                 k += 1
                 i += 1
-
         # getting first element in big list
         else:
             temp_height.append(height[i])
             ground_level = temp_height[0]
+
             ground_altitudes = [ALT - ground_level]
             temp_height[0] = temp_height[0] - ground_level
             temp_li.append(li[i])
