@@ -12,13 +12,14 @@ day = '18'
 month = '06'
 year = '2018'
 hour = '12'
-alt_ft = 45000 # Max altitude
-alt = alt_ft * 0.3048
+alt_ft = 45000
+alt = 51000 * 0.3048
 
 data, altitudes = process_data(day, month, year, hour, alt,
                                directory='../data/weather/')
 index = 2337  # index for worst case scenario
-altitude = altitudes[index]
+altitude = altitudes[index] / 0.3048
+print(altitude)
 key = list(data.keys())[index]
 weather_data = data[key]
 
@@ -54,7 +55,8 @@ else:
 
 # Run
 # axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE) # for standard atmosphere
-axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE, weather_data, altitude)
+axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE, altitude=altitude,
+                    weather=weather_data)
 axiebump.MESH_COARSEN_TOL = 0.00045
 axiebump.N_TANGENTIAL = 20
 loudness = axiebump.run([height, length_down_body, width])
