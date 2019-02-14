@@ -18,7 +18,10 @@ from scipy import interpolate
 from scipy import io
 from scipy.interpolate import griddata
 from scipy.interpolate import interp1d
-from mpl_toolkits.basemap import Basemap
+try:
+    from mpl_toolkits.basemap import Basemap
+except:
+    pass
 
 
 def process_noise(filename, transformation=None):
