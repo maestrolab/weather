@@ -12,11 +12,11 @@ day = '18'
 month = '06'
 year = '2018'
 hour = '12'
-alt_ft = 51706.037
+alt_ft = 45000 # Max altitude
 alt = alt_ft * 0.3048
 
 data, altitudes = process_data(day, month, year, hour, alt,
-                               directory='D:/GitHub/weather/data/weather/')
+                               directory='../data/weather/')
 index = 2337  # index for worst case scenario
 altitude = altitudes[index]
 key = list(data.keys())[index]
