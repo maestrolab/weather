@@ -21,8 +21,8 @@ class Airframe(object):
         self.vertrate = np.array([])
         self.angleOfAttack = np.array([])
         self.csv_filename = 'aircraftDatabase_1549729462_test.csv' #+ str(self.timestamp) + '_test.csv'
-        self.plot_filename = 'converged_v_AoA_500_1000_' + self.typecode + '_24_hours_5_minutes.png'
-        self.scatter_filename = 'converged_v_AoA_scatter_500_1000_' + self.typecode + '_24_hours_5_minutes.png'
+        self.plot_filename = 'until_250_v_AoA_' + self.typecode + '_24_hours_15_minutes.png'
+        self.scatter_filename = 'until_250_v_AoA_scatter_' + self.typecode + '_24_hours_15_minutes.png'
 
     def update_csv(self):
         """
@@ -104,13 +104,13 @@ class Airframe(object):
 
     def update_OpenSkyApi(self):
 
-        typecodeDict = pickle.load(open('../data/flight_plan/icao24s_'
+        typecodeDict = pickle.load(open('../data/flight_plan/icao24s_' +'C172_'
                         + str(self.timestamp) + '.p','rb'))
 
         ########################################################################
         # Creating list of timestamps over 24 hour period (separated by 15 minutes)
         timestampList = np.array([])
-        for i in range(0,24*60,5):
+        for i in range(0,24*60,15):
             timestampList = np.append(timestampList, self.timestamp + i*60)
 
         ########################################################################
@@ -153,21 +153,57 @@ class Airframe(object):
             typecodeDict[self.typecode]['icao24List'] = typecodeDict[self.typecode]['icao24List'][500:1000]
         ########################################################################
 
-        for timestamp in timestampList:
-            api = OpenSkyApi('jplilly25','Crossfit25')
-            try:
-                state = api.get_states(time_secs=timestamp,icao24=typecodeDict[self.typecode]['icao24List'])
-                try:
-                    for n in range(len(state.states)):
-                        if state.states[n]:
-                            if (state.states[n].velocity != 0) and (state.states[n].vertical_rate != None):
-                                self.velocity = np.append(self.velocity, state.states[n].velocity)
-                                self.vertrate = np.append(self.vertrate, state.states[n].vertical_rate)
-                except:
-                    pass
-            except:
-                print('get_states() failed to pull data from OpenSky-Network')
+        # for timestamp in timestampList:
+        #     api = OpenSkyApi('jplilly25','Crossfit25')
+        #     try:
+        #         state = api.get_states(time_secs=timestamp,icao24=typecodeDict[self.typecode]['icao24List'])
+        #         try:
+        #             for n in range(len(state.states)):
+        #                 if state.states[n]:
+        #                     if (state.states[n].velocity != 0) and (state.states[n].vertical_rate != None):
+        #                         self.velocity = np.append(self.velocity, state.states[n].velocity)
+        #                         self.vertrate = np.append(self.vertrate, state.states[n].vertical_rate)
+        #         except:
+        #             pass
+        #     except:
+        #         print('get_states() failed to pull data from OpenSky-Network')
         ########################################################################
+        # Running until ~250 data points are found.
+
+        timestamp = self.timestamp # did not want to change self.timestamp value
+
+        while len(self.velocity) < 500:
+            print(len(self.velocity))
+            # Checks to see if state present at timestamp
+            api = OpenSkyApi('jplilly25','Crossfit25')
+            state = api.get_states(time_secs=timestamp,icao24=typecodeDict[self.typecode]['icao24List'])
+
+            # try/except block acts as if statement (i.e. if state found, the code
+            #   in the try block will execute)
+            try:
+                # The previous 10 minutes and next 10 minutes from timestamp are
+                #   searched for states (every minute is checked)
+                t1 = timestamp - (10*60)
+                t2 = timestamp + (10*60)
+                timestampList = np.linspace(t1,t2,21)
+                for t in timestampList:
+                    api = OpenSkyApi('jplilly25','Crossfit25')
+                    state = api.get_states(time_secs=t,icao24=typecodeDict[self.typecode]['icao24List'])
+                    try:
+                        for n in range(len(state.states)):
+                            if state.states[n]:
+                                if (state.states[n].velocity != 0) and (state.states[n].vertical_rate != None):
+                                    self.velocity = np.append(self.velocity, state.states[n].velocity)
+                                    self.vertrate = np.append(self.vertrate, state.states[n].vertical_rate)
+                                if state.states[n].velocity > 80:
+                                    print(state.states[n].icao24)
+                    except:
+                        pass
+            except:
+                pass
+
+            # timestamp value is updated to the next 15 minute mark
+            timestamp += 15*60
 
         icao24s = open('../data/flight_plan/v_aoa_pickles/icao24s_' +
                         str(self.typecode) + '_' + str(self.timestamp) + '.p','wb')
@@ -204,7 +240,7 @@ class Airframe(object):
             next_AoA = 0
             i = 0
             while (abs(initial_AoA_value-next_AoA) > err).any() and \
-                    i < 10000000:
+                    i < 10000:
                 # if statement included to set the initial_AoA_value to the
                 #   previously calculated AoA
                 if (next_AoA != np.array([0])).any():
@@ -237,8 +273,16 @@ class Airframe(object):
         self.vertrate = np.array(data['vertrate'], dtype='float')
         self.angleOfAttack = self.calculate_angle_of_attack(self.velocity)
 
+        # Filtering a couple of data points that are outliers
+        i = 0
+        while i < len(self.angleOfAttack):
+            if self.angleOfAttack[i]<-5 or self.angleOfAttack[i]>30:
+                self.angleOfAttack = np.append(self.angleOfAttack[:i],self.angleOfAttack[i+1:])
+                self.velocity = np.append(self.velocity[:i],self.velocity[i+1:])
+            else:
+                i += 1
+
         values = np.vstack([self.angleOfAttack, self.velocity])
-        # values = np.vstack([self.angleOfAttack, self.velocity])
         pdf = gaussian_kde(values)
 
         return pdf
@@ -248,7 +292,7 @@ class Airframe(object):
 
         pdf = self.generate_pdf()
 
-        xgrid = np.linspace(-4.5,30,1000)# np.linspace(np.amin(self.angleOfAttack), np.amax(self.angleOfAttack), 1000)
+        xgrid = np.linspace(-5,35,1000)# np.linspace(np.amin(self.angleOfAttack), np.amax(self.angleOfAttack), 1000)
         ygrid = np.linspace(20,75,1000)# np.linspace(np.amin(self.velocity), np.amax(self.velocity), 1000)
 
         X, Y = np.meshgrid(xgrid,ygrid)
@@ -279,6 +323,9 @@ class Airframe(object):
 
         levels = np.append(levels, [0.000375, 0.0015, 0.003, 0.0045, 0.006, 0.0075, 0.009])
 
+        levels = np.array([0.0000, 0.0005, 0.001, 0.0015, 0.003, 0.0045, 0.006,\
+                    0.0075, 0.01, 0.0125, 0.015, 0.02, 0.025, 0.0275])
+
         fig = plt.figure()
         plt.contourf(X,Y,Z, levels=levels)
         # plt.title('PDF of Velocity vs. Vertical Velocity for %s' % self.typecode)
@@ -292,7 +339,6 @@ class Airframe(object):
 
         plt.savefig('../data/flight_plan/pdf_contours/' + self.typecode + '/'
                     + self.plot_filename)
-        # plt.show()
 
     def plot_scatter(self):
         """Description"""
@@ -330,16 +376,14 @@ class Airframe(object):
         # plt.plot(x_speeds, sounds, 'g', zorder = 3, label='Speed of Sound \n(Altitude = 43,100 [ft])')
         plt.scatter(self.angleOfAttack, self.velocity, zorder = 1)
         plt.xlabel('Approximated Angle of Attack [degrees]')
-        # plt.xlabel('Angle of Attack [degrees]')
         plt.ylabel('Velocity [m/s]')
-        plt.xlim(0,30)
+        plt.xlim(0,35)
         # plt.ylim(0,70)
         plt.legend(loc=0, fontsize=7, facecolor='w', framealpha=1.0)
         plt.grid(True)
 
         plt.savefig('../data/flight_plan/pdf_contours/' + self.typecode + '/'
                     + self.scatter_filename)
-        # plt.show()
 
 ################################################################################
 
@@ -353,5 +397,5 @@ if __name__ == '__main__':
     # airFrame.update_icao24s()
     # airFrame.update_OpenSkyApi() # must run for each typecode before pdf generation
     # pdf = airFrame.generate_pdf()
-    # airFrame.plot_pdf()
+    airFrame.plot_pdf()
     # airFrame.plot_scatter()
