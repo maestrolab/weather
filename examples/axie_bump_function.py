@@ -13,7 +13,7 @@ month = '06'
 year = '2018'
 hour = '12'
 alt_ft = 45000
-alt = 51000 * 0.3048
+alt = alt_ft * 0.3048
 
 data, altitudes = process_data(day, month, year, hour, alt,
                                directory='../data/weather/')
@@ -35,9 +35,17 @@ inputs = []
 for i in range(len(line)-1):
     inputs.append(float(line[i]))
 
-height = inputs[0]
-length_down_body = inputs[1]
-width = inputs[2]
+nBumps = inputs[0] # this input will denote the number of bumps
+bump_inputs=[] # initialize
+if nBumps >= 1:
+    for i in range(1,int(nBumps*3+1),3):
+        height = inputs[i]
+        length_down_body = inputs[i+1]
+        width = inputs[i+2]
+        bump=[height,length_down_body,width]
+        bump_inputs.append(bump)
+else:
+    raise RuntimeError("The first input (denoting the number of bumps) must be an integer greater than or equal to 1")
 
 CASE_DIR = "./"  # axie bump case
 PANAIR_EXE = 'panair.exe'  # name of the panair executable
@@ -59,7 +67,7 @@ axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE, altitude=altitude,
                     weather=weather_data)
 axiebump.MESH_COARSEN_TOL = 0.00045
 axiebump.N_TANGENTIAL = 20
-loudness = axiebump.run([height, length_down_body, width])
+loudness = axiebump.run(bump_inputs)
 
 print("Perceived loudness", loudness)
 
