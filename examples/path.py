@@ -9,6 +9,7 @@ import numpy as np
 from scipy.stats import gaussian_kde
 import matplotlib.pyplot as plt
 from weather.filehandling import output_reader
+import time
 
 ################################################################################
 class Airframe(object):
@@ -21,8 +22,8 @@ class Airframe(object):
         self.vertrate = np.array([])
         self.angleOfAttack = np.array([])
         self.csv_filename = 'aircraftDatabase_1549729462_test.csv' #+ str(self.timestamp) + '_test.csv'
-        self.plot_filename = 'until_250_v_AoA_' + self.typecode + '_24_hours_15_minutes.png'
-        self.scatter_filename = 'until_250_v_AoA_scatter_' + self.typecode + '_24_hours_15_minutes.png'
+        self.plot_filename = 'W=738_v_AoA_' + self.typecode + '.png'
+        self.scatter_filename = 'W=pertubations_v_AoA_scatter_' + self.typecode + '.png'
 
     def update_csv(self):
         """
@@ -172,7 +173,7 @@ class Airframe(object):
 
         timestamp = self.timestamp # did not want to change self.timestamp value
 
-        while len(self.velocity) < 500:
+        while len(self.velocity) < 1000:
             print(len(self.velocity))
             # Checks to see if state present at timestamp
             api = OpenSkyApi('jplilly25','Crossfit25')
@@ -211,10 +212,13 @@ class Airframe(object):
                      'vertrate':self.vertrate},icao24s)
         icao24s.close()
 
-    def calculate_angle_of_attack(self, velocity):
+    def calculate_angle_of_attack(self, velocity, weight):
+
+        angleOfAttack = np.array([])
 
         # Data for Cessna 172 (cruise altitude and cruise speed)
-        W = 1016.047 * 9.81 # [kg*m*s^-2]
+        # W = 1016.047 * 9.81 # [kg*m*s^-2]
+        W = weight * 9.81 # [kg*m*s^2]
         rho = 0.770488088 # [kg/m^3]
         # u = 62.57 # [m/s]: cruise for Cessna 172
         S = 16.1651 # [m^2]
@@ -258,10 +262,10 @@ class Airframe(object):
             j += 1
 
             # Adding converged AoA value to list of AoA's for later use
-            self.angleOfAttack = np.append(self.angleOfAttack, next_AoA)
+            angleOfAttack = np.append(angleOfAttack, next_AoA)
 
         # self.angleOfAttack = initial_AoA
-        return self.angleOfAttack
+        return angleOfAttack
 
     def generate_pdf(self):
         """Description"""
@@ -271,16 +275,26 @@ class Airframe(object):
 
         self.velocity = np.array(data['velocity'], dtype='float')
         self.vertrate = np.array(data['vertrate'], dtype='float')
-        self.angleOfAttack = self.calculate_angle_of_attack(self.velocity)
+        self.angleOfAttack = self.calculate_angle_of_attack(self.velocity, weight=738)
 
         # Filtering a couple of data points that are outliers
         i = 0
+        count = 0 # Included to check how many outliers were filtered out
         while i < len(self.angleOfAttack):
             if self.angleOfAttack[i]<-5 or self.angleOfAttack[i]>30:
                 self.angleOfAttack = np.append(self.angleOfAttack[:i],self.angleOfAttack[i+1:])
                 self.velocity = np.append(self.velocity[:i],self.velocity[i+1:])
+                count += 1
             else:
                 i += 1
+
+        # Used to check to make sure there were not many repeat points in data set
+        # for i in range(len(self.velocity)-1):
+        #     if self.velocity[i] == self.velocity[i+1]:
+        #         print('%i, v=%.2f' % (i,self.velocity[i]))
+        #
+        # print(self.velocity)
+        # print(count)
 
         values = np.vstack([self.angleOfAttack, self.velocity])
         pdf = gaussian_kde(values)
@@ -333,7 +347,7 @@ class Airframe(object):
         # plt.xlabel('Vertical Velocity [m/s]')
         plt.xlabel('Approximated Angle of Attack [degrees]')
         plt.ylabel('Velocity [m/s]')
-        #plt.xlim(-4.5,35)
+        plt.xlim(0,35)
         #plt.ylim(0,70)
         plt.colorbar()
 
@@ -348,7 +362,8 @@ class Airframe(object):
 
         self.velocity = np.array(data['velocity'], dtype='float')
         self.vertrate = np.array(data['vertrate'], dtype='float')
-        self.angleOfAttack = self.calculate_angle_of_attack(self.velocity)
+        self.angleOfAttack = np.array([])
+        self.angleOfAttack = self.calculate_angle_of_attack(self.velocity, weight=882)
 
         ########################################################################
         # Generating plot for A380 with cruise and speed of sound plotted.
@@ -372,9 +387,9 @@ class Airframe(object):
 
         fig = plt.figure()
         # plt.plot(x_speeds, cruising, 'r', zorder = 2, label='Cruise Speed (Mach 0.85)')
-        plt.plot(x_speeds, cruising, 'r', zorder = 2, label='Cruise Speed = 140 [mph]')
+        plt.plot(x_speeds, cruising, 'r', label='Cruise Speed = 140 [mph]')
         # plt.plot(x_speeds, sounds, 'g', zorder = 3, label='Speed of Sound \n(Altitude = 43,100 [ft])')
-        plt.scatter(self.angleOfAttack, self.velocity, zorder = 1)
+        plt.scatter(self.angleOfAttack, self.velocity, marker='.')
         plt.xlabel('Approximated Angle of Attack [degrees]')
         plt.ylabel('Velocity [m/s]')
         plt.xlim(0,35)
@@ -384,6 +399,129 @@ class Airframe(object):
 
         plt.savefig('../data/flight_plan/pdf_contours/' + self.typecode + '/'
                     + self.scatter_filename)
+
+    def plot_weight(self):
+        """Description"""
+
+        def compute_AoAs():
+            data = pickle.load(open('../data/flight_plan/v_aoa_pickles/icao24s_' +
+                            str(self.typecode) + '_' + str(self.timestamp) + '.p','rb'))
+
+            self.velocity = np.array(data['velocity'], dtype='float')
+            # self.vertrate = np.array(data['vertrate'], dtype='float')
+            # self.angleOfAttack = self.calculate_angle_of_attack(self.velocity, weight=882)
+
+            velocity = np.linspace(10,75,1000)# np.min(self.velocity),np.max(self.velocity),1000)
+            velocity = self.velocity
+            empty_weight = 618.61 # 1363.81 [lb]
+            pilot_weight = 62.14 # 137 [lb]
+            fuel_weight = 114.31 # 252 [lb]
+            fuel_percentage = 0.5 # chosen out of thin air
+
+            mean_weight = empty_weight + 1.5*pilot_weight + (fuel_percentage*fuel_weight)
+            max_weight = empty_weight + 3*pilot_weight + fuel_weight
+            min_weight = empty_weight
+
+            percentages = [0.05]
+            percent_weight_change = [p*mean_weight for p in percentages]
+
+            pwp = [pw+mean_weight for pw in percent_weight_change]
+            pwn = [mean_weight-pw for pw in percent_weight_change]
+            pwn.reverse()
+
+            weight = [min_weight, pwn[0], mean_weight, pwp[0], max_weight]
+
+            AoA = {str(w):[] for w in weight}
+
+            for w in weight:
+                AoA['%s' % str(w)] = self.calculate_angle_of_attack(velocity, weight=w)
+
+            AoAs = open('../data/flight_plan/pdf_contours/C172/AoAs_5%.p','wb')
+            pickle.dump({'weight':weight,'AoA':AoA,'velocity':velocity},AoAs)
+            AoAs.close()
+
+        def gnome_sort(array):
+
+            pos = 0
+            swapCount = 0
+
+            rows = array.shape[0]
+            columns = array.shape[1]
+
+            array_dict = {array[0,i]:[array[0,i],array[1,i]] for i in range(columns)}
+            array = array[0,:]
+
+            # The loop will run until the position checked is the last position in the
+            #   array.
+            # Length of rows in array is used below to terminate after top row is sorted
+            while pos < columns:
+                # if the value at a position is greater than the one to the left of it,
+                # the position is moved one space to the right
+                if (pos == 0) or (array[pos] >= array[pos-1]).any():
+                    pos += 1
+                else:
+                    # the value at a position is flipped with the value at the position
+                    # to the left of it and the position is moved one space to the left
+                    placeholder = array[pos]
+                    array[pos] = array[pos-1]
+                    array[pos-1] = placeholder
+                    swapCount += 1
+                    pos -= 1
+
+            # Rebuild array from array_dict and sorted 1-D array
+            new_array = np.zeros((2,len(array)))
+            for j in range(len(array)):
+                for i in range(2):
+                    new_array[i,j] = array_dict[array[j]][i]
+
+            return new_array
+
+        # compute_AoAs()
+
+        data = pickle.load(open('../data/flight_plan/pdf_contours/C172/AoAs_5%.p','rb'))
+
+        labels = ['Min Weight = 1,363 [lb]','-5% Mean Weight = 1,546 [lb]','Mean Weight = 1,627 [lb]'\
+                ,'+5% Mean Weight = 1,708 [lb]','Max Weight = 2027 [lb]']
+
+        fig = plt.figure()
+
+        # Taken out so that the data ranges plotted could be changed individually
+        # for i in range(len(data['weight'])):
+        #     v_aoa = np.stack((data['AoA'][str(data['weight'][i])], data['velocity']))
+        #     v_aoa_1 = gnome_sort(v_aoa)
+        #     plt.plot(v_aoa_1[0,20:],v_aoa_1[1,20:])
+
+        v_aoa = np.stack((data['AoA'][str(data['weight'][0])], data['velocity']))
+        v_aoa_1 = gnome_sort(v_aoa)
+        v_aoa = np.stack((data['AoA'][str(data['weight'][1])], data['velocity']))
+        v_aoa_2 = gnome_sort(v_aoa)
+        v_aoa = np.stack((data['AoA'][str(data['weight'][2])], data['velocity']))
+        v_aoa_3 = gnome_sort(v_aoa)
+        v_aoa = np.stack((data['AoA'][str(data['weight'][3])], data['velocity']))
+        v_aoa_4 = gnome_sort(v_aoa)
+        v_aoa = np.stack((data['AoA'][str(data['weight'][4])], data['velocity']))
+        v_aoa_5 = gnome_sort(v_aoa)
+
+        cruise_C172 = 62.59 # [m/s]
+        x_speeds = np.linspace(-35,80,5000)
+        cruising = np.ones(len(x_speeds)) * cruise_C172
+
+        plt.plot(v_aoa_1[0,20:],v_aoa_1[1,20:], label=labels[0])
+        plt.plot(v_aoa_2[0,20:],v_aoa_2[1,20:], label=labels[1])
+        plt.plot(v_aoa_3[0,10:],v_aoa_3[1,10:], label=labels[2])
+        plt.plot(v_aoa_4[0,20:],v_aoa_4[1,20:], label=labels[3])
+        plt.plot(v_aoa_5[0,30:],v_aoa_5[1,30:], label=labels[4])
+        plt.plot(x_speeds, cruising,'--', label='Cruise Speed = 140 [mph]')
+        # for w in data['weight']:
+            # plt.scatter(data['AoA']['%s' % str(w)], data['velocity'], label=labels)
+        plt.xlabel('Approximated Angle of Attack [degrees]')
+        plt.ylabel('Velocity [m/s]')
+        plt.xlim(-1,30)
+        plt.ylim(0,75)
+        plt.legend(fontsize='small',loc='upper right', framealpha=1.0)
+        plt.grid(True)
+
+        plt.savefig('../data/flight_plan/pdf_contours/C172/weight_pertubations_5%.png')
 
 ################################################################################
 
@@ -395,7 +533,13 @@ if __name__ == '__main__':
 
     airFrame = Airframe(typecode=typecodeList[15], timestamp=1549036800)
     # airFrame.update_icao24s()
+    # start_time = time.time()
     # airFrame.update_OpenSkyApi() # must run for each typecode before pdf generation
+    # end_time = time.time()
+    # elapsed_time = end_time - start_time
+    # print('Elapsed Time = %.2f' % elapsed_time)
     # pdf = airFrame.generate_pdf()
-    airFrame.plot_pdf()
+    # print(pdf)
+    # airFrame.plot_pdf()
     # airFrame.plot_scatter()
+    airFrame.plot_weight()
