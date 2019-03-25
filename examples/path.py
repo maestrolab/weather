@@ -22,7 +22,7 @@ class Airframe(object):
         self.vertrate = np.array([])
         self.angleOfAttack = np.array([])
         self.csv_filename = 'aircraftDatabase_1549729462_test.csv' #+ str(self.timestamp) + '_test.csv'
-        self.plot_filename = 'W=738_v_AoA_' + self.typecode + '.png'
+        self.plot_filename = 'weight_pdf_v_AoA_' + self.typecode + '.png'
         self.scatter_filename = 'W=pertubations_v_AoA_scatter_' + self.typecode + '.png'
 
     def update_csv(self):
@@ -296,15 +296,20 @@ class Airframe(object):
         # print(self.velocity)
         # print(count)
 
+        # Calculate the PDF of velocity vs. angle of attack for a single weight.
         values = np.vstack([self.angleOfAttack, self.velocity])
         pdf = gaussian_kde(values)
 
-        return pdf
+        # Find conditional probability of (angle of attack, velocity) given
+        #   a certain weight.
+        #   Weight of aircraft is assumed to have a uniform distribution.
+        #   P(W) = 1/(max_weight - min_weight)
+        #   P((alpha, v) and W) = P((alpha, v) | W) * P(W)
 
-    def plot_pdf(self):
-        """Generate contour plot visualizing PDF of velocity vs. angle of attack."""
+        min_weight = 618 # [kg] = 1,363 [lb]
+        max_weight = 919 # [kg] = 2027 [lb]
 
-        pdf = self.generate_pdf()
+        weight_distribution = 1/(max_weight-min_weight)
 
         xgrid = np.linspace(-5,35,1000)# np.linspace(np.amin(self.angleOfAttack), np.amax(self.angleOfAttack), 1000)
         ygrid = np.linspace(20,75,1000)# np.linspace(np.amin(self.velocity), np.amax(self.velocity), 1000)
@@ -312,7 +317,21 @@ class Airframe(object):
         X, Y = np.meshgrid(xgrid,ygrid)
         positions = np.vstack([X.ravel(), Y.ravel()])
 
-        Z = np.reshape(pdf(positions).T, X.shape)
+        pdf_points = pdf(positions)*weight_distribution # Conditional probability calculation
+
+        return pdf_points
+
+    def plot_pdf(self):
+        """Generate contour plot visualizing PDF of velocity vs. angle of attack."""
+
+        pdf_points = self.generate_pdf()
+
+        xgrid = np.linspace(-5,35,1000)
+        ygrid = np.linspace(20,75,1000)
+
+        X, Y = np.meshgrid(xgrid,ygrid)
+
+        Z = np.reshape(pdf_points.T, X.shape)
 
         ########################################################################
         # Generate custom contour levels to better visualize data for A380
@@ -330,6 +349,10 @@ class Airframe(object):
         # # print(levels)
         ########################################################################
 
+        # Levels are manually set to better visualize distribution
+        #   NOTE: not set for contour plot considering conditional probability of
+        #       weight and (angle of attack, velocity)
+
         levels = np.array([0.0000])
 
         for i in range(8):
@@ -341,13 +364,13 @@ class Airframe(object):
                     0.0075, 0.01, 0.0125, 0.015, 0.02, 0.025, 0.0275])
 
         fig = plt.figure()
-        plt.contourf(X,Y,Z, levels=levels)
+        plt.contourf(X,Y,Z)#, levels=levels)
         # plt.title('PDF of Velocity vs. Vertical Velocity for %s' % self.typecode)
         # plt.title('PDF of Velocity vs. Angle of Attack for %s' % self.typecode)
         # plt.xlabel('Vertical Velocity [m/s]')
         plt.xlabel('Approximated Angle of Attack [degrees]')
         plt.ylabel('Velocity [m/s]')
-        plt.xlim(0,35)
+        plt.xlim(-2,35)
         #plt.ylim(0,70)
         plt.colorbar()
 
@@ -540,6 +563,6 @@ if __name__ == '__main__':
     # print('Elapsed Time = %.2f' % elapsed_time)
     # pdf = airFrame.generate_pdf()
     # print(pdf)
-    # airFrame.plot_pdf()
+    airFrame.plot_pdf()
     # airFrame.plot_scatter()
-    airFrame.plot_weight()
+    # airFrame.plot_weight()
