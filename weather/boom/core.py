@@ -3,8 +3,11 @@ import pickle
 import numpy as np
 from scipy import interpolate
 
-from pyldb import perceivedloudness
-from rapidboom.sboomwrapper import SboomWrapper
+try:
+    from pyldb import perceivedloudness
+    from rapidboom.sboomwrapper import SboomWrapper
+except:
+    pass
 from weather import makeFloats, windToXY
 
 
