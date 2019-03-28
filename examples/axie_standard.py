@@ -13,16 +13,6 @@ month = '06'
 year = '2018'
 hour = '12'
 alt_ft = 45000
-alt = alt_ft * 0.3048
-
-data, altitudes = process_data(day, month, year, hour, alt,
-                               directory='../data/weather/')
-index = 2337  # index for worst case scenario
-altitude = altitudes[index] / 0.3048
-print(altitude)
-key = list(data.keys())[index]
-weather_data = data[key]
-
 
 # Read inputs from a file
 f = open('axie_bump_inputs.txt', 'r')
