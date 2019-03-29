@@ -9,7 +9,7 @@ day = '18'
 hours = '12'
 
 data, altitudes = process_data(day, month, year, hours, 0,
-                              directory='../data/weather/')
+                               directory='../../data/weather/')
 latlon_list = list(data.keys())
 
 features = []

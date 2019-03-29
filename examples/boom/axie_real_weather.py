@@ -12,17 +12,20 @@ day = '18'
 month = '06'
 year = '2018'
 hour = '12'
+lat = 38
+lon = -107
 alt_ft = 45000
-alt = alt_ft * 0.3048
 
+# Extracting data from database
+alt = alt_ft * 0.3048
 data, altitudes = process_data(day, month, year, hour, alt,
                                directory='../data/weather/')
-index = 2337  # index for worst case scenario
-altitude = altitudes[index] / 0.3048
-
-key = list(data.keys())[index]
+key = '%i, %i' % (lat, lon)
 weather_data = data[key]
 
+# Height to ground (HAG)
+index = list(data.keys()).index(key)
+height_to_ground = altitudes[index] / 0.3048
 
 # Read inputs from a file
 f = open('axie_bump_inputs.txt', 'r')
@@ -35,9 +38,13 @@ inputs = []
 for i in range(len(line)-1):
     inputs.append(float(line[i]))
 
-height = inputs[0]
-length_down_body = inputs[1]
-width = inputs[2]
+n_bumps = inputs[0]  # this input will denote the number of bumps
+bump_inputs = []  # initialize
+if len(inputs) % 3 != 0:
+    for i in range(1, len(inputs), 3):
+        bump_inputs.append(inputs[i:i+3])
+else:
+    raise RuntimeError("The first input must denote the number of bumps")
 
 CASE_DIR = "./"  # axie bump case
 PANAIR_EXE = 'panair.exe'  # name of the panair executable
@@ -55,11 +62,11 @@ else:
 
 # Run
 # axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE) # for standard atmosphere
-axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE, altitude=altitude,
+axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE, altitude=height_to_ground,
                     weather=weather_data)
 axiebump.MESH_COARSEN_TOL = 0.00045
 axiebump.N_TANGENTIAL = 20
-loudness = axiebump.run([height, length_down_body, width])
+loudness = axiebump.run(bump_inputs)
 
 print("Perceived loudness", loudness)
 

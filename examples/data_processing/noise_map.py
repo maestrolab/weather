@@ -8,7 +8,7 @@ month = '06'
 year = '2018'
 hour = '12'
 
-filename = "../data/noise/" + year + "_" + month + "_" + day + "_" + hour
+filename = "../../data/noise/" + year + "_" + month + "_" + day + "_" + hour
 data = process_noise(filename)
 
 features = []
@@ -24,4 +24,4 @@ for i in range(len(data)):
 feature_collection = FeatureCollection(features)
 
 with open('myfile.geojson', 'w') as f:
-   dump(feature_collection, f)
+    dump(feature_collection, f)
