@@ -10,7 +10,7 @@ YEAR = '2014'
 MONTH = '01'
 DAY = '07'
 HOUR = '00'
-directory = '../data/balloon_weather/'
+directory = '../../data/balloon_weather/'
 data = balloon_scraper(YEAR, MONTH, DAY, HOUR, directory)
 
 g = open("file.p", "wb")

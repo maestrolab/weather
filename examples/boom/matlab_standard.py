@@ -2,16 +2,11 @@ from rapidboom import AxieBump
 from weather.boom import process_data, read_input
 import platform
 
-# Bump design variables
-height = 0.1  # meters
-length_down_body = 20  # meters
-width = 6  # meters
-bump_inputs = [height, length_down_body, width]
-
-# Flight conditions inputs
 alt_ft = 45000.
 
-# Setting up for
+# Collect input values
+bump_inputs = read_input('axie_bump_inputs.txt')
+
 CASE_DIR = "./"  # axie bump case
 PANAIR_EXE = 'panair.exe'  # name of the panair executable
 SBOOM_EXE = 'sboom_windows.dat.allow.exe'  # name of the sboom executable

@@ -24,5 +24,5 @@ for i in range(len(data)):
 
 feature_collection = FeatureCollection(features)
 
-with open('myfile1.geojson', 'w') as f:
+with open('temperature.geojson', 'w') as f:
     dump(feature_collection, f)

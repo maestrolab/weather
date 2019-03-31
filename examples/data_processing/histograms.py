@@ -27,7 +27,7 @@ year = '2018'
 hour = '12'
 
 # Get noise data
-filename = "../data/noise/noise_per_county"
+filename = "../../data/noise/noise_per_county"
 noise_data = pickle.load(open(filename + '.p', 'rb'))
 noise = copy.deepcopy(noise_data[:, 3])
 pop = noise_data[:, 2]/sum(noise_data[:, 2])

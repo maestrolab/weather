@@ -23,5 +23,5 @@ for i in range(len(data)):
 
 feature_collection = FeatureCollection(features)
 
-with open('myfile.geojson', 'w') as f:
+with open('noise.geojson', 'w') as f:
     dump(feature_collection, f)

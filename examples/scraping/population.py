@@ -27,7 +27,7 @@ c = Census(api_key)
 # Extracting location data
 type_structure = ['string', 'string', 'string', 'float', 'float',
                   'float', 'float', 'float', 'float']
-raw_data = output_reader('../data/us_census/location.txt',
+raw_data = output_reader('../../data/us_census/location.txt',
                          type_structure=type_structure)
 data = []
 undesired_states = ['02', '15']
@@ -43,7 +43,7 @@ for i in range(len(raw_data['GEOID'])):
         data.append([lon, lat, pop, noise])
 data = np.array(data)
 
-g = open("../data/noise/noise_per_county.p", "wb")
+g = open("../../data/noise/noise_per_county.p", "wb")
 pickle.dump(data, g)
 g.close()
 

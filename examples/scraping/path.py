@@ -4,7 +4,7 @@ specified classes of aircraft.
 """
 
 import pickle
-from opensky_api.python.opensky_api import OpenSkyApi
+from opensky_api import OpenSkyApi
 import numpy as np
 from scipy.stats import gaussian_kde
 import matplotlib.pyplot as plt
@@ -12,16 +12,19 @@ from weather.filehandling import output_reader
 import time
 
 ################################################################################
+
+
 class Airframe(object):
     """as"""
 
     def __init__(self, timestamp=1549729462, typecode='B737'):
-        self.typecode = typecode #--> (in methods, only pull [0:3])
-        self.timestamp = timestamp # Included to tell what csv to use and when to pull OpenSkyApi data from
+        self.typecode = typecode  # --> (in methods, only pull [0:3])
+        self.timestamp = timestamp  # Included to tell what csv to use and when to pull OpenSkyApi data from
         self.velocity = np.array([])
         self.vertrate = np.array([])
         self.angleOfAttack = np.array([])
-        self.csv_filename = 'aircraftDatabase_1549729462_test.csv' #+ str(self.timestamp) + '_test.csv'
+        # + str(self.timestamp) + '_test.csv'
+        self.csv_filename = 'aircraftDatabase_1549729462_test.csv'
         self.plot_filename = 'weight_pdf_v_AoA_' + self.typecode + '.png'
         self.scatter_filename = 'W=pertubations_v_AoA_scatter_' + self.typecode + '.png'
 
@@ -30,7 +33,7 @@ class Airframe(object):
         Instructions how to format aircraftDatabase.csv downloaded from
            OpenSky-Network.
         """
-        pass # Will include description of how to format csv for proper use
+        pass  # Will include description of how to format csv for proper use
 
     def read_csv(self, filename):
         """Read aircraft database csv."""
@@ -39,7 +42,7 @@ class Airframe(object):
         for n in range(3):
             type_structure.append('string')
 
-        data = output_reader('../data/flight_plan/aircraftDatabases/' + filename, separator=[','],
+        data = output_reader('../../data/flight_plan/aircraftDatabases/' + filename, separator=[','],
                              type_structure=type_structure)
         return data
 
@@ -48,32 +51,33 @@ class Airframe(object):
         Generates icao24s_self.timestamp.p pickle (all icao24s sorted by typecode)
         """
 
-        data = self.read_csv(self.csv_filename) # Made separate function in case a different filename
-                          # is wanted to be used. (type(data) == dictionary)
+        # Made separate function in case a different filename
+        data = self.read_csv(self.csv_filename)
+        # is wanted to be used. (type(data) == dictionary)
 
-        typecodeDict = {'B737':{},'B747':{},'B757':{},'B767':{},'B777':{},'B787':{},
-                        'A310':{},'A318':{},'A319':{},'A320':{},'A321':{},
-                        'A330':{},'A340':{},'A350':{},'A380':{},'C172':{},'C180':{},
-                        'C182':{}}
+        typecodeDict = {'B737': {}, 'B747': {}, 'B757': {}, 'B767': {}, 'B777': {}, 'B787': {},
+                        'A310': {}, 'A318': {}, 'A319': {}, 'A320': {}, 'A321': {},
+                        'A330': {}, 'A340': {}, 'A350': {}, 'A380': {}, 'C172': {}, 'C180': {},
+                        'C182': {}}
         typecodeKeys = list(typecodeDict.keys())
-        typecodeDict = {key:{'icao24List':[], 'manufacturer':''} for key in typecodeDict}
+        typecodeDict = {key: {'icao24List': [], 'manufacturer': ''} for key in typecodeDict}
 
         # Add manufacturer information to each typecode.
         for key in typecodeKeys:
-              if key[0:1] == 'B':
-                  typecodeDict[key]['manufacturer'] = 'Boeing'
-              if key[0:1] == 'A':
-                  typecodeDict[key]['manufacturer'] = 'Airbus'
-              if key[0:1] == 'C':
-                  typecodeDict[key]['manufacturer'] = 'Cessna'
+            if key[0:1] == 'B':
+                typecodeDict[key]['manufacturer'] = 'Boeing'
+            if key[0:1] == 'A':
+                typecodeDict[key]['manufacturer'] = 'Airbus'
+            if key[0:1] == 'C':
+                typecodeDict[key]['manufacturer'] = 'Cessna'
 
         # Use typecode to gather icao24s for Boeing and Airbus aircraft
         for key in typecodeKeys[0:15]:
-            i = 0 # here to offset icao24 row pull
+            i = 0  # here to offset icao24 row pull
             icao24List = []
             for typecode in data['typecode']:
                 if typecode[0:3] == key[0:3]:
-                    icao24List.append(data['icao24'][i+1]) # i+1: lines up icao24 w/ typecode
+                    icao24List.append(data['icao24'][i+1])  # i+1: lines up icao24 w/ typecode
                 i += 1
             typecodeDict[key]['icao24List'] = icao24List
 
@@ -94,24 +98,24 @@ class Airframe(object):
             """
             for typecode in data['typecode']:
                 if typecode == key:
-                    icao24List.append(data['icao24'][i+1]) # i+1: lines up icao24 w/ typecode
+                    icao24List.append(data['icao24'][i+1])  # i+1: lines up icao24 w/ typecode
                 i += 1
             typecodeDict[key]['icao24List'] = icao24List
 
-        icao24s = open('../data/flight_plan/icao24s_'
-                        + str(self.timestamp) + '.p','wb')
-        pickle.dump(typecodeDict,icao24s)
+        icao24s = open('../../data/flight_plan/icao24s_'
+                       + str(self.timestamp) + '.p', 'wb')
+        pickle.dump(typecodeDict, icao24s)
         icao24s.close()
 
     def update_OpenSkyApi(self):
 
-        typecodeDict = pickle.load(open('../data/flight_plan/icao24s_' +'C172_'
-                        + str(self.timestamp) + '.p','rb'))
+        typecodeDict = pickle.load(open('../../data/flight_plan/icao24s_' + 'C172_'
+                                        + str(self.timestamp) + '.p', 'rb'))
 
         ########################################################################
         # Creating list of timestamps over 24 hour period (separated by 15 minutes)
         timestampList = np.array([])
-        for i in range(0,24*60,15):
+        for i in range(0, 24*60, 15):
             timestampList = np.append(timestampList, self.timestamp + i*60)
 
         ########################################################################
@@ -123,9 +127,9 @@ class Airframe(object):
         i = 0
         while i < len(typecodeDict[self.typecode]['icao24List']):
             if len(typecodeDict[self.typecode]['icao24List'][i]) != 6:
-                typecodeDict[self.typecode]['icao24List'] = np.append(\
-                typecodeDict[self.typecode]['icao24List'][:i],typecodeDict[self.typecode]\
-                ['icao24List'][i+1:])
+                typecodeDict[self.typecode]['icao24List'] = np.append(
+                    typecodeDict[self.typecode]['icao24List'][:i], typecodeDict[self.typecode]
+                    ['icao24List'][i+1:])
             else:
                 i += 1
 
@@ -171,13 +175,14 @@ class Airframe(object):
         ########################################################################
         # Running until ~250 data points are found.
 
-        timestamp = self.timestamp # did not want to change self.timestamp value
+        timestamp = self.timestamp  # did not want to change self.timestamp value
 
         while len(self.velocity) < 1000:
             print(len(self.velocity))
             # Checks to see if state present at timestamp
-            api = OpenSkyApi('jplilly25','Crossfit25')
-            state = api.get_states(time_secs=timestamp,icao24=typecodeDict[self.typecode]['icao24List'])
+            api = OpenSkyApi('jplilly25', 'Crossfit25')
+            state = api.get_states(time_secs=timestamp,
+                                   icao24=typecodeDict[self.typecode]['icao24List'])
 
             # try/except block acts as if statement (i.e. if state found, the code
             #   in the try block will execute)
@@ -186,16 +191,19 @@ class Airframe(object):
                 #   searched for states (every minute is checked)
                 t1 = timestamp - (10*60)
                 t2 = timestamp + (10*60)
-                timestampList = np.linspace(t1,t2,21)
+                timestampList = np.linspace(t1, t2, 21)
                 for t in timestampList:
-                    api = OpenSkyApi('jplilly25','Crossfit25')
-                    state = api.get_states(time_secs=t,icao24=typecodeDict[self.typecode]['icao24List'])
+                    api = OpenSkyApi('jplilly25', 'Crossfit25')
+                    state = api.get_states(
+                        time_secs=t, icao24=typecodeDict[self.typecode]['icao24List'])
                     try:
                         for n in range(len(state.states)):
                             if state.states[n]:
                                 if (state.states[n].velocity != 0) and (state.states[n].vertical_rate != None):
-                                    self.velocity = np.append(self.velocity, state.states[n].velocity)
-                                    self.vertrate = np.append(self.vertrate, state.states[n].vertical_rate)
+                                    self.velocity = np.append(
+                                        self.velocity, state.states[n].velocity)
+                                    self.vertrate = np.append(
+                                        self.vertrate, state.states[n].vertical_rate)
                                 if state.states[n].velocity > 80:
                                     print(state.states[n].icao24)
                     except:
@@ -206,10 +214,10 @@ class Airframe(object):
             # timestamp value is updated to the next 15 minute mark
             timestamp += 15*60
 
-        icao24s = open('../data/flight_plan/v_aoa_pickles/icao24s_' +
-                        str(self.typecode) + '_' + str(self.timestamp) + '.p','wb')
-        pickle.dump({'velocity':self.velocity,'angleOfAttack':self.angleOfAttack,
-                     'vertrate':self.vertrate},icao24s)
+        icao24s = open('../../data/flight_plan/v_aoa_pickles/icao24s_' +
+                       str(self.typecode) + '_' + str(self.timestamp) + '.p', 'wb')
+        pickle.dump({'velocity': self.velocity, 'angleOfAttack': self.angleOfAttack,
+                     'vertrate': self.vertrate}, icao24s)
         icao24s.close()
 
     def calculate_angle_of_attack(self, velocity, weight):
@@ -218,13 +226,13 @@ class Airframe(object):
 
         # Data for Cessna 172 (cruise altitude and cruise speed)
         # W = 1016.047 * 9.81 # [kg*m*s^-2]
-        W = weight * 9.81 # [kg*m*s^2]
-        rho = 0.770488088 # [kg/m^3]
+        W = weight * 9.81  # [kg*m*s^2]
+        rho = 0.770488088  # [kg/m^3]
         # u = 62.57 # [m/s]: cruise for Cessna 172
-        S = 16.1651 # [m^2]
+        S = 16.1651  # [m^2]
         Cl_alpha = 0.0776
         Cl_o = 0.33
-        incidenceAngle = 1 # [deg]
+        incidenceAngle = 1  # [deg]
 
         cos_alpha = np.linspace(np.cos(-5/180*np.pi), np.cos(15/180*np.pi), len(velocity))
         cos_alpha = np.mean(cos_alpha)
@@ -235,7 +243,7 @@ class Airframe(object):
         # Defining Cl as average of possible Cls for Cessna 172 assuming -5 < AoA < 15 [deg]
         # Cl = np.mean(Cl)
 
-        initial_AoA = (Cl-Cl_o)/Cl_alpha + incidenceAngle # [deg]
+        initial_AoA = (Cl-Cl_o)/Cl_alpha + incidenceAngle  # [deg]
 
         # Implementing fixed-point iteration:
         err = 0.001
@@ -270,8 +278,8 @@ class Airframe(object):
     def generate_pdf(self):
         """Description"""
 
-        data = pickle.load(open('../data/flight_plan/v_aoa_pickles/icao24s_' +
-                        str(self.typecode) + '_' + str(self.timestamp) + '.p','rb'))
+        data = pickle.load(open('../../data/flight_plan/v_aoa_pickles/icao24s_' +
+                                str(self.typecode) + '_' + str(self.timestamp) + '.p', 'rb'))
 
         self.velocity = np.array(data['velocity'], dtype='float')
         self.vertrate = np.array(data['vertrate'], dtype='float')
@@ -279,11 +287,11 @@ class Airframe(object):
 
         # Filtering a couple of data points that are outliers
         i = 0
-        count = 0 # Included to check how many outliers were filtered out
+        count = 0  # Included to check how many outliers were filtered out
         while i < len(self.angleOfAttack):
-            if self.angleOfAttack[i]<-5 or self.angleOfAttack[i]>30:
-                self.angleOfAttack = np.append(self.angleOfAttack[:i],self.angleOfAttack[i+1:])
-                self.velocity = np.append(self.velocity[:i],self.velocity[i+1:])
+            if self.angleOfAttack[i] < -5 or self.angleOfAttack[i] > 30:
+                self.angleOfAttack = np.append(self.angleOfAttack[:i], self.angleOfAttack[i+1:])
+                self.velocity = np.append(self.velocity[:i], self.velocity[i+1:])
                 count += 1
             else:
                 i += 1
@@ -306,18 +314,20 @@ class Airframe(object):
         #   P(W) = 1/(max_weight - min_weight)
         #   P((alpha, v) and W) = P((alpha, v) | W) * P(W)
 
-        min_weight = 618 # [kg] = 1,363 [lb]
-        max_weight = 919 # [kg] = 2027 [lb]
+        min_weight = 618  # [kg] = 1,363 [lb]
+        max_weight = 919  # [kg] = 2027 [lb]
 
         weight_distribution = 1/(max_weight-min_weight)
 
-        xgrid = np.linspace(-5,35,1000)# np.linspace(np.amin(self.angleOfAttack), np.amax(self.angleOfAttack), 1000)
-        ygrid = np.linspace(20,75,1000)# np.linspace(np.amin(self.velocity), np.amax(self.velocity), 1000)
+        # np.linspace(np.amin(self.angleOfAttack), np.amax(self.angleOfAttack), 1000)
+        xgrid = np.linspace(-5, 35, 1000)
+        # np.linspace(np.amin(self.velocity), np.amax(self.velocity), 1000)
+        ygrid = np.linspace(20, 75, 1000)
 
-        X, Y = np.meshgrid(xgrid,ygrid)
+        X, Y = np.meshgrid(xgrid, ygrid)
         positions = np.vstack([X.ravel(), Y.ravel()])
 
-        pdf_points = pdf(positions)*weight_distribution # Conditional probability calculation
+        pdf_points = pdf(positions)*weight_distribution  # Conditional probability calculation
 
         return pdf_points
 
@@ -326,10 +336,10 @@ class Airframe(object):
 
         pdf_points = self.generate_pdf()
 
-        xgrid = np.linspace(-5,35,1000)
-        ygrid = np.linspace(20,75,1000)
+        xgrid = np.linspace(-5, 35, 1000)
+        ygrid = np.linspace(20, 75, 1000)
 
-        X, Y = np.meshgrid(xgrid,ygrid)
+        X, Y = np.meshgrid(xgrid, ygrid)
 
         Z = np.reshape(pdf_points.T, X.shape)
 
@@ -360,28 +370,28 @@ class Airframe(object):
 
         levels = np.append(levels, [0.000375, 0.0015, 0.003, 0.0045, 0.006, 0.0075, 0.009])
 
-        levels = np.array([0.0000, 0.0005, 0.001, 0.0015, 0.003, 0.0045, 0.006,\
-                    0.0075, 0.01, 0.0125, 0.015, 0.02, 0.025, 0.0275])
+        levels = np.array([0.0000, 0.0005, 0.001, 0.0015, 0.003, 0.0045, 0.006,
+                           0.0075, 0.01, 0.0125, 0.015, 0.02, 0.025, 0.0275])
 
         fig = plt.figure()
-        plt.contourf(X,Y,Z)#, levels=levels)
+        plt.contourf(X, Y, Z)  # , levels=levels)
         # plt.title('PDF of Velocity vs. Vertical Velocity for %s' % self.typecode)
         # plt.title('PDF of Velocity vs. Angle of Attack for %s' % self.typecode)
         # plt.xlabel('Vertical Velocity [m/s]')
         plt.xlabel('Approximated Angle of Attack [degrees]')
         plt.ylabel('Velocity [m/s]')
-        plt.xlim(-2,35)
-        #plt.ylim(0,70)
+        plt.xlim(-2, 35)
+        # plt.ylim(0,70)
         plt.colorbar()
 
-        plt.savefig('../data/flight_plan/pdf_contours/' + self.typecode + '/'
+        plt.savefig('../../data/flight_plan/pdf_contours/' + self.typecode + '/'
                     + self.plot_filename)
 
     def plot_scatter(self):
         """Description"""
 
-        data = pickle.load(open('../data/flight_plan/v_aoa_pickles/icao24s_' +
-                        str(self.typecode) + '_' + str(self.timestamp) + '.p','rb'))
+        data = pickle.load(open('../../data/flight_plan/v_aoa_pickles/icao24s_' +
+                                str(self.typecode) + '_' + str(self.timestamp) + '.p', 'rb'))
 
         self.velocity = np.array(data['velocity'], dtype='float')
         self.vertrate = np.array(data['vertrate'], dtype='float')
@@ -400,10 +410,10 @@ class Airframe(object):
 
         ########################################################################
         # Generating plot for Cessna 172 with cruise and speed of sound plotted.
-        cruise_C172 = 62.59 # [m/s]
+        cruise_C172 = 62.59  # [m/s]
         # speed_of_sound = 294.9 # [m/s] at altitude = 43,100 [ft]
 
-        x_speeds = np.linspace(-35,80,5000)
+        x_speeds = np.linspace(-35, 80, 5000)
         cruising = np.ones(len(x_speeds)) * cruise_C172
         # sounds = np.ones(len(x_speeds)) * speed_of_sound
         ########################################################################
@@ -415,31 +425,32 @@ class Airframe(object):
         plt.scatter(self.angleOfAttack, self.velocity, marker='.')
         plt.xlabel('Approximated Angle of Attack [degrees]')
         plt.ylabel('Velocity [m/s]')
-        plt.xlim(0,35)
+        plt.xlim(0, 35)
         # plt.ylim(0,70)
         plt.legend(loc=0, fontsize=7, facecolor='w', framealpha=1.0)
         plt.grid(True)
 
-        plt.savefig('../data/flight_plan/pdf_contours/' + self.typecode + '/'
+        plt.savefig('../../data/flight_plan/pdf_contours/' + self.typecode + '/'
                     + self.scatter_filename)
 
     def plot_weight(self):
         """Description"""
 
         def compute_AoAs():
-            data = pickle.load(open('../data/flight_plan/v_aoa_pickles/icao24s_' +
-                            str(self.typecode) + '_' + str(self.timestamp) + '.p','rb'))
+            data = pickle.load(open('../../data/flight_plan/v_aoa_pickles/icao24s_' +
+                                    str(self.typecode) + '_' + str(self.timestamp) + '.p', 'rb'))
 
             self.velocity = np.array(data['velocity'], dtype='float')
             # self.vertrate = np.array(data['vertrate'], dtype='float')
             # self.angleOfAttack = self.calculate_angle_of_attack(self.velocity, weight=882)
 
-            velocity = np.linspace(10,75,1000)# np.min(self.velocity),np.max(self.velocity),1000)
+            # np.min(self.velocity),np.max(self.velocity),1000)
+            velocity = np.linspace(10, 75, 1000)
             velocity = self.velocity
-            empty_weight = 618.61 # 1363.81 [lb]
-            pilot_weight = 62.14 # 137 [lb]
-            fuel_weight = 114.31 # 252 [lb]
-            fuel_percentage = 0.5 # chosen out of thin air
+            empty_weight = 618.61  # 1363.81 [lb]
+            pilot_weight = 62.14  # 137 [lb]
+            fuel_weight = 114.31  # 252 [lb]
+            fuel_percentage = 0.5  # chosen out of thin air
 
             mean_weight = empty_weight + 1.5*pilot_weight + (fuel_percentage*fuel_weight)
             max_weight = empty_weight + 3*pilot_weight + fuel_weight
@@ -454,13 +465,13 @@ class Airframe(object):
 
             weight = [min_weight, pwn[0], mean_weight, pwp[0], max_weight]
 
-            AoA = {str(w):[] for w in weight}
+            AoA = {str(w): [] for w in weight}
 
             for w in weight:
                 AoA['%s' % str(w)] = self.calculate_angle_of_attack(velocity, weight=w)
 
-            AoAs = open('../data/flight_plan/pdf_contours/C172/AoAs_5%.p','wb')
-            pickle.dump({'weight':weight,'AoA':AoA,'velocity':velocity},AoAs)
+            AoAs = open('../../data/flight_plan/pdf_contours/C172/AoAs_5%.p', 'wb')
+            pickle.dump({'weight': weight, 'AoA': AoA, 'velocity': velocity}, AoAs)
             AoAs.close()
 
         def gnome_sort(array):
@@ -471,8 +482,8 @@ class Airframe(object):
             rows = array.shape[0]
             columns = array.shape[1]
 
-            array_dict = {array[0,i]:[array[0,i],array[1,i]] for i in range(columns)}
-            array = array[0,:]
+            array_dict = {array[0, i]: [array[0, i], array[1, i]] for i in range(columns)}
+            array = array[0, :]
 
             # The loop will run until the position checked is the last position in the
             #   array.
@@ -492,19 +503,19 @@ class Airframe(object):
                     pos -= 1
 
             # Rebuild array from array_dict and sorted 1-D array
-            new_array = np.zeros((2,len(array)))
+            new_array = np.zeros((2, len(array)))
             for j in range(len(array)):
                 for i in range(2):
-                    new_array[i,j] = array_dict[array[j]][i]
+                    new_array[i, j] = array_dict[array[j]][i]
 
             return new_array
 
         # compute_AoAs()
 
-        data = pickle.load(open('../data/flight_plan/pdf_contours/C172/AoAs_5%.p','rb'))
+        data = pickle.load(open('../../data/flight_plan/pdf_contours/C172/AoAs_5%.p', 'rb'))
 
-        labels = ['Min Weight = 1,363 [lb]','-5% Mean Weight = 1,546 [lb]','Mean Weight = 1,627 [lb]'\
-                ,'+5% Mean Weight = 1,708 [lb]','Max Weight = 2027 [lb]']
+        labels = ['Min Weight = 1,363 [lb]', '-5% Mean Weight = 1,546 [lb]',
+                  'Mean Weight = 1,627 [lb]', '+5% Mean Weight = 1,708 [lb]', 'Max Weight = 2027 [lb]']
 
         fig = plt.figure()
 
@@ -525,33 +536,34 @@ class Airframe(object):
         v_aoa = np.stack((data['AoA'][str(data['weight'][4])], data['velocity']))
         v_aoa_5 = gnome_sort(v_aoa)
 
-        cruise_C172 = 62.59 # [m/s]
-        x_speeds = np.linspace(-35,80,5000)
+        cruise_C172 = 62.59  # [m/s]
+        x_speeds = np.linspace(-35, 80, 5000)
         cruising = np.ones(len(x_speeds)) * cruise_C172
 
-        plt.plot(v_aoa_1[0,20:],v_aoa_1[1,20:], label=labels[0])
-        plt.plot(v_aoa_2[0,20:],v_aoa_2[1,20:], label=labels[1])
-        plt.plot(v_aoa_3[0,10:],v_aoa_3[1,10:], label=labels[2])
-        plt.plot(v_aoa_4[0,20:],v_aoa_4[1,20:], label=labels[3])
-        plt.plot(v_aoa_5[0,30:],v_aoa_5[1,30:], label=labels[4])
-        plt.plot(x_speeds, cruising,'--', label='Cruise Speed = 140 [mph]')
+        plt.plot(v_aoa_1[0, 20:], v_aoa_1[1, 20:], label=labels[0])
+        plt.plot(v_aoa_2[0, 20:], v_aoa_2[1, 20:], label=labels[1])
+        plt.plot(v_aoa_3[0, 10:], v_aoa_3[1, 10:], label=labels[2])
+        plt.plot(v_aoa_4[0, 20:], v_aoa_4[1, 20:], label=labels[3])
+        plt.plot(v_aoa_5[0, 30:], v_aoa_5[1, 30:], label=labels[4])
+        plt.plot(x_speeds, cruising, '--', label='Cruise Speed = 140 [mph]')
         # for w in data['weight']:
-            # plt.scatter(data['AoA']['%s' % str(w)], data['velocity'], label=labels)
+        # plt.scatter(data['AoA']['%s' % str(w)], data['velocity'], label=labels)
         plt.xlabel('Approximated Angle of Attack [degrees]')
         plt.ylabel('Velocity [m/s]')
-        plt.xlim(-1,30)
-        plt.ylim(0,75)
-        plt.legend(fontsize='small',loc='upper right', framealpha=1.0)
+        plt.xlim(-1, 30)
+        plt.ylim(0, 75)
+        plt.legend(fontsize='small', loc='upper right', framealpha=1.0)
         plt.grid(True)
 
-        plt.savefig('../data/flight_plan/pdf_contours/C172/weight_pertubations_5%.png')
+        plt.savefig('../../data/flight_plan/pdf_contours/C172/weight_pertubations_5%.png')
 
 ################################################################################
 
+
 if __name__ == '__main__':
-    typecodeList = ['B737','B747','B757','B767','B777','B787',
-                    'A310','A318','A319','A320','A321',
-                    'A330','A340','A350','A380','C172','C180',
+    typecodeList = ['B737', 'B747', 'B757', 'B767', 'B777', 'B787',
+                    'A310', 'A318', 'A319', 'A320', 'A321',
+                    'A330', 'A340', 'A350', 'A380', 'C172', 'C180',
                     'C182']
 
     airFrame = Airframe(typecode=typecodeList[15], timestamp=1549036800)

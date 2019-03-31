@@ -4,7 +4,7 @@ Code developed to scrape weather data online from TwisterData.com.
  Data is from the GFS weather model used by TwisterData.com.
 """
 
-from weather.scraper import scraper
+from weather.scraper import noaa_scraper
 import datetime
 
 year = str(datetime.date.today().strftime('%Y'))
@@ -12,4 +12,4 @@ month = str(datetime.date.today().strftime('%m'))
 day = str(datetime.date.today().strftime('%d'))
 hour = '12'
 
-scraper(year, month, day, hour)
+noaa_scraper(year, month, day, hour)
