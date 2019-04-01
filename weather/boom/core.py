@@ -12,7 +12,7 @@ from weather import makeFloats, windToXY
 
 
 def boom_runner(data, cruise_altitude, j,
-                nearfield_file='../data/nearfield/25D_M16_50000ft.p'):
+                nearfield_file='../../data/nearfield/25D_M16_50000ft.p'):
     '''
     Runs sBOOM
      Python3 Version
@@ -225,3 +225,30 @@ def combineLatLon(lat, lon):
         w_latlon.append([lat[i], lon[i]])
 
     return w_latlon
+
+
+def read_input(filename):
+    # Read inputs from a file
+    f = open(filename, 'r')
+    line = f.read()
+    line = line.split('\t')
+    f.close()
+
+    # Collect input values
+    inputs = []
+    for i in range(len(line)-1):
+        inputs.append(float(line[i]))
+
+    nBumps = inputs[0]  # this input will denote the number of bumps
+    bump_inputs = []  # initialize
+    if nBumps >= 1:
+        for i in range(1, int(nBumps*3+1), 3):
+            height = inputs[i]
+            length_down_body = inputs[i+1]
+            width = inputs[i+2]
+            bump = [height, length_down_body, width]
+            bump_inputs.append(bump)
+    else:
+        raise RuntimeError(
+            "The first input (denoting the number of bumps) must be an integer greater than or equal to 1")
+    return bump_inputs

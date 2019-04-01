@@ -104,5 +104,10 @@ venv.bak/
 .mypy_cache/
 
 # My edits
-examples/sBOOM
-examples/panair_files
+examples/boom/sBOOM
+examples/data_processing/sBOOM
+examples/boom/panair_files
+*.geojson
+examples/scraping/*.csv
+examples/scraping/*.p
+*.pyc
