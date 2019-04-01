@@ -1,7 +1,7 @@
 import pickle
 from weather import process_noise
 from weather.boom import boom_runner, process_data
-from geojson import Point, Feature, FeatureCollection, dump
+from geojson import Polygon, Feature, FeatureCollection, dump
 
 day = '18'
 month = '06'
@@ -15,8 +15,8 @@ features = []
 for i in range(len(data)):
     print(i)
     lat, lon, noise = data[i]
-    point = Point((lat, lon))
-    features.append(Feature(geometry=point, properties={"Noise": noise}))
+    polygon = Polygon([[(lat-0.5, lon-0.5),(lat+0.5,lon-0.5),(lat+0.5,lon+0.5),(lat-0.5,lon+0.5),(lat-0.5, lon-0.5)]])
+    features.append(Feature(geometry=polygon, properties={"Noise": noise}))
 
 # add more features...
 # features.append(...)
