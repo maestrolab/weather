@@ -3,11 +3,8 @@ import pickle
 import numpy as np
 from scipy import interpolate
 
-try:
-    from pyldb import perceivedloudness
-    from rapidboom.sboomwrapper import SboomWrapper
-except:
-    pass
+from pyldb import perceivedloudness
+from rapidboom.sboomwrapper import SboomWrapper
 from weather import makeFloats, windToXY
 
 
@@ -50,6 +47,11 @@ def boom_runner(data, cruise_altitude, j,
     # wind input (altitude ft, humidity %)
     humidity = data[key]['humidity']
 
+    ############################################################################
+    # parametrize the humidity profile
+    humidity = parametrize_humidity(humidity)
+    ############################################################################
+
     # update sBOOM settings and run
     sboom.set(mach_number=mach,
               altitude=ALT_ft,
@@ -84,7 +86,7 @@ def process_data(day, month, year, hour, altitude,
 
     all_data = pickle.load(open(directory + year +
                                 "_" + month + "_" + day + "_" + hour +
-                                ".p", 'rb'))
+                                ".p", "rb"))
 
     # Reading data for selected properties
     if outputs_of_interest == 'all':
@@ -252,3 +254,67 @@ def read_input(filename):
         raise RuntimeError(
             "The first input (denoting the number of bumps) must be an integer greater than or equal to 1")
     return bump_inputs
+
+
+def parametrize_humidity(humidity):
+    """parametrize_humidity takes a humidity profile represented as a list of
+    data points (each data point has a corresponding altitude stored with it)
+    and returns a parametrized humidity profile. The goal of the parametrized
+    humidity profile is to simplify the input to the optimization algorithm
+    while mainting an accurate percieved noise level (+/- 0.1 PLdB).
+    """
+    ############################################################################
+    # Clumps of data points are clustered together and average humidity and
+    #   average altitude computed and inputted into sboom.
+    # humidity_vals = [h[1] for h in humidity]
+    # temp_vals = [t[0] for t in humidity]
+    #
+    # humidity_vals_trial = [humidity_vals[0]]
+    # humidity_vals_trial.append(sum(humidity_vals[1:3])/2)
+    # humidity_vals_trial.append(sum(humidity_vals[3:5])/2)
+    # humidity_vals_trial.append(sum(humidity_vals[5:8])/3)
+    # humidity_vals_trial.append(sum(humidity_vals[8:13])/5)
+    # humidity_vals_trial.append(humidity_vals[13])
+    #
+    # temp_vals_trial = [temp_vals[0]]
+    # temp_vals_trial.append(sum(temp_vals[1:3])/2)
+    # temp_vals_trial.append(sum(temp_vals[3:5])/2)
+    # temp_vals_trial.append(sum(temp_vals[5:8])/3)
+    # temp_vals_trial.append(sum(temp_vals[8:13])/5)
+    # temp_vals_trial.append(temp_vals[13])
+    # # print(humidity_vals_trial, temp_vals_trial)
+
+    # humidity = []
+    # for i in range(len(humidity_vals_trial)):
+    #     humidity.append([temp_vals_trial[i],humidity_vals_trial[i]])
+    ############################################################################
+    # Point added via linear interpolation between two points in profile
+    #   Did not change perceived loudness --> linear interpolation used in
+    #   sboom?
+    # new_humidity = []
+    # new_humidity = [humidity[i] for i in range(13)]
+    # new_humidity.append([12750.0,67.92])
+    # new_humidity.append(humidity[13])
+    ############################################################################
+    # Points removed if altitude was above a certain threshold
+    #   Works to an extent --> does not reduce number of data points enough
+    # threshold = 4001 # [ft]
+    # new_humidity = [h for h in humidity if h[0] < threshold]
+    ############################################################################
+
+    humidity_vals = [h[1] for h in new_humidity]
+    alt_vals = [alt[0] for alt in new_humidity]
+
+    import matplotlib.pyplot as plt
+
+    fig = plt.figure()
+    plt.plot(humidity_vals, alt_vals)
+    plt.xlabel('Relative Humidity')
+    plt.ylabel('Altitude [ft]')
+    plt.grid(True)
+
+    filename = 'Test.png'
+    plt.savefig('./../../data/weather/parametrized_humidity_profiles/' +
+                filename)
+
+    return new_humidity
