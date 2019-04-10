@@ -10,12 +10,17 @@ def expected(data, airFrame):
     pdf = airFrame.generate_pdf(np.vstack([alpha.ravel(), V.ravel()]))
     pdf = pdf.reshape(lift_to_drag.shape)
     expected_value = 0
-    integrated_list = []
+    numerator_list = []
+    denominator_list = []
     for i in range(len(lift_to_drag)):
-        temp = simps(lift_to_drag[i]*pdf[i], alpha[i])
-        integrated_list.append(temp)
-    expected_value = simps(integrated_list, V[:, 0])
-    return(expected_value/sum(pdf.ravel()))
+        numerator = simps(lift_to_drag[i]*pdf[i], alpha[i])
+        denominator = simps(pdf[i], alpha[i])
+        numerator_list.append(numerator)
+        denominator_list.append(denominator)
+    numerator = simps(numerator_list, V[:, 0])
+    denominator = simps(denominator_list, V[:, 0])
+    expected_value = numerator/denominator
+    return(expected_value)
 
 
 mat = scipy.io.loadmat('../../data/msc/morphing.mat')
