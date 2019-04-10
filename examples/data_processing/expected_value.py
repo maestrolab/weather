@@ -2,6 +2,7 @@ import scipy.io
 from scipy.integrate import simps
 import numpy as np
 from weather.scraper.path import Airframe
+import matplotlib.pyplot as plt
 
 
 def expected(data, airFrame):
@@ -19,6 +20,7 @@ def expected(data, airFrame):
         denominator_list.append(denominator)
     numerator = simps(numerator_list, V[:, 0])
     denominator = simps(denominator_list, V[:, 0])
+    print(denominator)
     expected_value = numerator/denominator
     return(expected_value)
 
@@ -36,7 +38,12 @@ typecodeList = ['B737', 'B747', 'B757', 'B767', 'B777', 'B787',
                 'C182']
 
 airFrame = Airframe(typecode=typecodeList[15], timestamp=1549036800)
-
+airFrame.retrieve_data()
+alpha, V, lift_to_drag = owl
+airFrame.plot_pdf()
+plt.scatter(alpha, V)
+# airFrame.plot_scatter()
+plt.show()
 print('owl', expected(owl, airFrame))
 print('NACA0012', expected(naca0012, airFrame))
 print('NACA4415', expected(naca4415, airFrame))

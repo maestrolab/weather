@@ -20,6 +20,8 @@ class Airframe(object):
         self.csv_filename = 'aircraftDatabase_1549729462_test.csv'
         self.plot_filename = 'weight_pdf_v_AoA_' + self.typecode + '.png'
         self.scatter_filename = 'W=pertubations_v_AoA_scatter_' + self.typecode + '.png'
+        self.filepath = '../../data/flight_plan/v_aoa_pickles/icao24s_'
+        self.airframe = 'C172'
 
     def update_csv(self):
         """
@@ -102,7 +104,7 @@ class Airframe(object):
 
     def update_OpenSkyApi(self):
 
-        typecodeDict = pickle.load(open('../../data/flight_plan/icao24s_' + 'C172_'
+        typecodeDict = pickle.load(open(self.filepath + self.airframe
                                         + str(self.timestamp) + '.p', 'rb'))
 
         ########################################################################
@@ -207,8 +209,8 @@ class Airframe(object):
             # timestamp value is updated to the next 15 minute mark
             timestamp += 15*60
 
-        icao24s = open('../../data/flight_plan/v_aoa_pickles/icao24s_' +
-                       str(self.typecode) + '_' + str(self.timestamp) + '.p', 'wb')
+        icao24s = open(self.filepath + str(self.typecode) + '_' +
+                       str(self.timestamp) + '.p', 'wb')
         pickle.dump({'velocity': self.velocity, 'angleOfAttack': self.angleOfAttack,
                      'vertrate': self.vertrate}, icao24s)
         icao24s.close()
@@ -270,32 +272,20 @@ class Airframe(object):
 
     def generate_pdf(self, parameters):
         """Description"""
-
-        data = pickle.load(open('../../data/flight_plan/v_aoa_pickles/icao24s_' +
-                                str(self.typecode) + '_' + str(self.timestamp) + '.p', 'rb'))
-
-        self.velocity = np.array(data['velocity'], dtype='float')
-        self.vertrate = np.array(data['vertrate'], dtype='float')
-        self.angleOfAttack = self.calculate_angle_of_attack(self.velocity, weight=738)
+        if parameters is None:
+            parameters = np.vstack([self.angleOfAttack, self.velocity])
 
         # Filtering a couple of data points that are outliers
         i = 0
         count = 0  # Included to check how many outliers were filtered out
         while i < len(self.angleOfAttack):
             if self.angleOfAttack[i] < -5 or self.angleOfAttack[i] > 30:
-                self.angleOfAttack = np.append(self.angleOfAttack[:i], self.angleOfAttack[i+1:])
+                self.angleOfAttack = np.append(self.angleOfAttack[:i],
+                                               self.angleOfAttack[i+1:])
                 self.velocity = np.append(self.velocity[:i], self.velocity[i+1:])
                 count += 1
             else:
                 i += 1
-
-        # Used to check to make sure there were not many repeat points in data set
-        # for i in range(len(self.velocity)-1):
-        #     if self.velocity[i] == self.velocity[i+1]:
-        #         print('%i, v=%.2f' % (i,self.velocity[i]))
-        #
-        # print(self.velocity)
-        # print(count)
 
         # Calculate the PDF of velocity vs. angle of attack for a single weight.
         values = np.vstack([self.angleOfAttack, self.velocity])
@@ -310,18 +300,18 @@ class Airframe(object):
         min_weight = 618  # [kg] = 1,363 [lb]
         max_weight = 919  # [kg] = 2027 [lb]
 
-        weight_distribution = 1/(max_weight-min_weight)
-        pdf_points = pdf(parameters)*weight_distribution  # Conditional probability calculation
+        # weight_distribution = 1/(max_weight-min_weight)
+        pdf_points = pdf(parameters)  # *weight_distribution  # Conditional probability calculation
 
-        return pdf_points
+        return pdf_points.reshape(parameters[0])
 
-    def plot_pdf(self, parameters):
-        """Generate contour plot visualizing PDF of velocity vs. angle of attack."""
+    def plot_pdf(self, parameters=None,
+                 xgrid=np.linspace(-5, 35, 1000),
+                 ygrid=np.linspace(20, 75, 1000)):
+        """Generate contour plot visualizing PDF of velocity vs. angle of
+        attack."""
 
         pdf_points = self.generate_pdf(parameters)
-
-        xgrid = np.linspace(-5, 35, 1000)
-        ygrid = np.linspace(20, 75, 1000)
 
         X, Y = np.meshgrid(xgrid, ygrid)
 
@@ -365,33 +355,13 @@ class Airframe(object):
         plt.xlabel('Approximated Angle of Attack [degrees]')
         plt.ylabel('Velocity [m/s]')
         plt.xlim(-2, 35)
-        # plt.ylim(0,70)
         plt.colorbar()
-        plt.show()
 
         plt.savefig('../../data/flight_plan/pdf_contours/' + self.typecode + '/'
                     + self.plot_filename)
 
     def plot_scatter(self):
         """Description"""
-
-        data = pickle.load(open('../../data/flight_plan/v_aoa_pickles/icao24s_' +
-                                str(self.typecode) + '_' + str(self.timestamp) + '.p', 'rb'))
-
-        self.velocity = np.array(data['velocity'], dtype='float')
-        self.vertrate = np.array(data['vertrate'], dtype='float')
-        self.angleOfAttack = np.array([])
-        self.angleOfAttack = self.calculate_angle_of_attack(self.velocity, weight=882)
-
-        ########################################################################
-        # Generating plot for A380 with cruise and speed of sound plotted.
-        # cruise_A380 = 250.83 # [m/s]
-        # speed_of_sound = 294.9 # [m/s] at altitude = 43,100 [ft]
-        #
-        # x_speeds = np.linspace(-30,30,5000)
-        # cruising = np.ones(len(x_speeds)) * cruise_A380
-        # sounds = np.ones(len(x_speeds)) * speed_of_sound
-        ########################################################################
 
         ########################################################################
         # Generating plot for Cessna 172 with cruise and speed of sound plotted.
@@ -422,10 +392,6 @@ class Airframe(object):
         """Description"""
 
         def compute_AoAs():
-            data = pickle.load(open('../../data/flight_plan/v_aoa_pickles/icao24s_' +
-                                    str(self.typecode) + '_' + str(self.timestamp) + '.p', 'rb'))
-
-            self.velocity = np.array(data['velocity'], dtype='float')
             # self.vertrate = np.array(data['vertrate'], dtype='float')
             # self.angleOfAttack = self.calculate_angle_of_attack(self.velocity, weight=882)
 
@@ -455,8 +421,10 @@ class Airframe(object):
             for w in weight:
                 AoA['%s' % str(w)] = self.calculate_angle_of_attack(velocity, weight=w)
 
-            AoAs = open('../../data/flight_plan/pdf_contours/C172/AoAs_5%.p', 'wb')
-            pickle.dump({'weight': weight, 'AoA': AoA, 'velocity': velocity}, AoAs)
+            AoAs = open('../../data/flight_plan/pdf_contours/C172/AoAs_5%.p',
+                        'wb')
+            pickle.dump({'weight': weight, 'AoA': AoA, 'velocity': velocity},
+                        AoAs)
             AoAs.close()
 
         def gnome_sort(array):
@@ -541,3 +509,12 @@ class Airframe(object):
         plt.grid(True)
 
         plt.savefig('../../data/flight_plan/pdf_contours/C172/weight_pertubations_5%.png')
+
+    def retrieve_data(self):
+        data = pickle.load(open(self.filepath + str(self.typecode) + '_' +
+                                str(self.timestamp) + '.p', 'rb'))
+
+        self.velocity = np.array(data['velocity'], dtype='float')
+        self.vertrate = np.array(data['vertrate'], dtype='float')
+        self.angleOfAttack = self.calculate_angle_of_attack(self.velocity,
+                                                            weight=882)
