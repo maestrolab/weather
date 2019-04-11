@@ -5,8 +5,8 @@ day = '18'
 month = '06'
 year = '2018'
 hour = '12'
-lat = 38
-lon = -107
+lat = 50
+lon = -100
 alt_ft = 45000.
 alt = alt_ft * 0.3048
 
