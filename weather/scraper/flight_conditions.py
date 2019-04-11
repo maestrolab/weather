@@ -1,16 +1,21 @@
-import pickle
-from opensky_api import OpenSkyApi
-import numpy as np
-from scipy.stats import gaussian_kde
-import matplotlib.pyplot as plt
-from weather.filehandling import output_reader
 import time
+import pickle
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import fixed_point
+from sklearn.neighbors.kde import KernelDensity
+
+from opensky_api import OpenSkyApi
+from weather.filehandling import output_reader
 
 
 class properties(object):
     def __init__(self, inputs):
         for key in inputs:
             setattr(self, key, inputs[key])
+
+        self.weight_min = self.mass_min * 9.81
+        self.weight_max = self.mass_max * 9.81
 
 
 class Airframe(object):
@@ -21,80 +26,81 @@ class Airframe(object):
          - airframe: typecode for airframe (e.g. B737)
          - timestamp: Time when OpenSkyApi pulls data from
          - filepath: path to where information is retrieved
+         - properties: object properties with all airframe and other relevant
+                      properties
        """
 
     def __init__(self, timestamp=1549729462, airframe='B737',
-                 filepath='../../data/flight_plan/v_aoa_pickles/icao24s_'):
+                 filepath='../../data/flight_plan/v_aoa_pickles/icao24s_',
+                 properties=properties):
         self.airframe = airframe
         self.timestamp = timestamp
         self.filepath = filepath
+        self.properties = properties
 
-    def calculate_angle_of_attack(self, velocity, weight, density=0.770488088,
-                                  planform=16.1651, Cl_alpha=0.0776):
+    def calculate_aoa(self, weight, velocity):
+        # If input is not list/array convert it to one
+        try:
+            len(velocity)  # dummy test
+        except(TypeError):
+            velocity = [velocity]
+        try:
+            len(weight)  # dummy test
+        except(TypeError):
+            weight = [weight]
 
-        angleOfAttack = np.array([])
+        # Implementing fixed-point iteration
+        aoa = []
+        for i in range(len(velocity)):
+            aoa_i = fixed_point(self._aoa, 2., args=(weight[i], velocity[i]))
+            aoa.append(float(aoa_i))
+        return(aoa)
 
-        # Data for Cessna 172 (cruise altitude and cruise speed)
-        W = weight * 9.81  # [kg*m*s^2]
-        rho = 0.770488088  # [kg/m^3]
-        # u = 62.57 # [m/s]: cruise for Cessna 172
-        S = 16.1651  # [m^2]
-        Cl_alpha = 0.0776
-        Cl_o = 0.33
-        incidenceAngle = 1  # [deg]
+    def _aoa(self, aoa, weight, velocity):
+        p = self.properties
+        cos = np.cos(np.radians(aoa + p.incidence))
+        aoa = (2*weight/(p.density*velocity**2*p.planform)*cos -
+               p.Cl_0)/p.Cl_alpha
+        return np.degrees(aoa)
 
-        cos_alpha = np.linspace(np.cos(-5/180*np.pi), np.cos(15/180*np.pi),
-                                len(velocity))
-        cos_alpha = np.mean(cos_alpha)
-        constant = 2*W/rho/(velocity)**2/S
+    def plot_pdf(self, parameters=None,
+                 xgrid=np.linspace(-5, 35, 1000),
+                 ygrid=np.linspace(20, 75, 1000)):
+        """Generate contour plot visualizing PDF of velocity vs. angle of
+        attack."""
 
-        Cl = (1/cos_alpha) * constant
+        X, Y = np.meshgrid(xgrid, ygrid)
+        Z = np.exp(self.pdf.score_samples(np.array([X.ravel(), Y.ravel()]).T))
+        Z = np.reshape(Z, X.shape)
 
-        # Defining Cl as average of possible Cls for Cessna 172 assuming -5 < AoA < 15 [deg]
-        # Cl = np.mean(Cl)
-
-        initial_AoA = (Cl-Cl_o)/Cl_alpha + incidenceAngle  # [deg]
-
-        # Implementing fixed-point iteration:
-        err = 0.001
-        j = 0
-        for initial_AoA_value in initial_AoA:
-            next_AoA = 0
-            i = 0
-            while (abs(initial_AoA_value-next_AoA) > err).any() and \
-                    i < 10000:
-                # if statement included to set the initial_AoA_value to the
-                #   previously calculated AoA
-                if (next_AoA != np.array([0])).any():
-                    initial_AoA_value = next_AoA
-
-                # Calculation of part of the calculation for AoA (depends on
-                #   velocity which is an array, therefore, need index)
-                constant = 2*W/rho/(velocity[j])**2/S
-
-                # Calculation of coefficient of lift and AoA
-                Cl = (1/np.cos(initial_AoA_value/180*np.pi)) * constant
-                next_AoA = (Cl-Cl_o)/Cl_alpha + incidenceAngle
-                i += 1
-
-            j += 1
-
-            # Adding converged AoA value to list of AoA's for later use
-            angleOfAttack = np.append(angleOfAttack, next_AoA)
-
-        # self.angleOfAttack = initial_AoA
-        self.aoa = angleOfAttack
+        plt.figure()
+        plt.contourf(X, Y, Z)
+        plt.xlabel('Approximated Angle of Attack [degrees]')
+        plt.ylabel('Velocity [m/s]')
+        # plt.xlim(-2, 35)
+        plt.colorbar()
+        plt.show()
 
     def retrieve_data(self):
         data = pickle.load(open(self.filepath + str(self.airframe) + '_' +
                                 str(self.timestamp) + '.p', 'rb'))
 
         self.velocity = np.array(data['velocity'], dtype='float')
+        self.velocity = self.velocity.reshape(len(self.velocity), 1)
         self.climb_rate = np.array(data['vertrate'], dtype='float')
+        self.climb_rate = self.climb_rate.reshape(len(self.climb_rate), 1)
+        self.pdf_velocity = KernelDensity(kernel='gaussian').fit(self.velocity)
+        self.pdf_climb = KernelDensity(kernel='gaussian').fit(self.climb_rate)
 
+    def train_pdf(self, population=100000):
+        """Description"""
+        p = self.properties
+        self.database = []
+        for i in range(population):
+            weight = np.random.uniform(p.weight_min, p.weight_max)
+            velocity = self.pdf_velocity.sample()[0]
+            aoa = self.calculate_aoa(weight, velocity)
+            self.database.append([aoa[0], velocity[0]])
 
-if __name__ == "__main__":
-
-    C172_props = properties({'Cl_alpha': 0.0776, 'Cl_0': 0.33,
-                             'planform': 16.1651, 'density': 0.770488088,
-                             'Mass_min': 618, 'Mass_max': 919})
+        self.database = np.array(self.database)
+        self.pdf = KernelDensity(kernel='gaussian').fit(self.database)

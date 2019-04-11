@@ -1,15 +1,16 @@
 import scipy.io
-from scipy.integrate import simps
 import numpy as np
-from weather.scraper.path import Airframe
 import matplotlib.pyplot as plt
+from scipy.integrate import simps
+
+from weather.scraper.flight_conditions import properties, Airframe
 
 
 def expected(data, airFrame):
     alpha, V, lift_to_drag = data
 
-    pdf = airFrame.generate_pdf(np.vstack([alpha.ravel(), V.ravel()]))
-    pdf = pdf.reshape(lift_to_drag.shape)
+    pdf = airFrame.pdf.score_samples(np.vstack([alpha.ravel(), V.ravel()]).T)
+    pdf = np.exp(pdf.reshape(lift_to_drag.shape))
     expected_value = 0
     numerator_list = []
     denominator_list = []
@@ -20,7 +21,6 @@ def expected(data, airFrame):
         denominator_list.append(denominator)
     numerator = simps(numerator_list, V[:, 0])
     denominator = simps(denominator_list, V[:, 0])
-    print(denominator)
     expected_value = numerator/denominator
     return(expected_value)
 
@@ -31,19 +31,19 @@ owl = mat['Owl'][0][0]
 naca0012 = mat['NACA0012'][0][0]
 naca4415 = mat['NACA4415'][0][0]
 
+C172_props = properties({'Cl_alpha': 5.143, 'Cl_0': 0.31,
+                         'planform': 16.1651, 'density': 0.770488088,
+                         'mass_min': 618., 'mass_max': 919.,
+                         'incidence': 0.})
+C172 = Airframe(airframe='C172', timestamp=1549036800,
+                filepath='../../data/flight_plan/v_aoa_pickles/icao24s_',
+                properties=C172_props)
+C172.retrieve_data()
+C172.train_pdf(1000)
 
-typecodeList = ['B737', 'B747', 'B757', 'B767', 'B777', 'B787',
-                'A310', 'A318', 'A319', 'A320', 'A321',
-                'A330', 'A340', 'A350', 'A380', 'C172', 'C180',
-                'C182']
-
-airFrame = Airframe(typecode=typecodeList[15], timestamp=1549036800)
-airFrame.retrieve_data()
 alpha, V, lift_to_drag = owl
-airFrame.plot_pdf()
-plt.scatter(alpha, V)
-# airFrame.plot_scatter()
+
 plt.show()
-print('owl', expected(owl, airFrame))
-print('NACA0012', expected(naca0012, airFrame))
-print('NACA4415', expected(naca4415, airFrame))
+print('owl', expected(owl, C172))
+print('NACA0012', expected(naca0012, C172))
+print('NACA4415', expected(naca4415, C172))
