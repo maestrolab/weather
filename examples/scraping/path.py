@@ -4,7 +4,7 @@ specified classes of aircraft.
 """
 
 import pickle
-from opensky_api import OpenSkyApi
+from opensky_api.python.opensky_api import OpenSkyApi
 import numpy as np
 from scipy.stats import gaussian_kde
 import matplotlib.pyplot as plt
