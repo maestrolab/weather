@@ -15,7 +15,12 @@ from weather import makeFloats
 
 def contour(data, levels=None, transformation=None, label="Perceived Loudness, PLdB"):
     lon, lat, z = data.T
+    print(z)
     numcols, numrows = len(lon), len(lat)
+    
+    plt.figure()
+    plt.scatter(lon,lat)
+    plt.show()
     
     fig = plt.figure(figsize=(12, 6))
 
@@ -32,11 +37,9 @@ def contour(data, levels=None, transformation=None, label="Perceived Loudness, P
     xi = np.linspace(map_lon.min(), map_lon.max(), numcols)
     yi = np.linspace(map_lat.min(), map_lat.max(), numrows)
     xi, yi = np.meshgrid(xi, yi)
-    print(map_lon.min(), map_lon.max(), lon.min(), lon.max())
     # interpolate
-    print(len(z))
     zi = griddata((map_lon, map_lat), z, (xi, yi), method='linear')
-
+    plt.scatter(xi,yi)
     # contour plot
     if levels is None:
         m.contourf(xi, yi, zi, cmap=cm.coolwarm)

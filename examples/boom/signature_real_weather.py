@@ -5,14 +5,13 @@ day = '18'
 month = '06'
 year = '2018'
 hour = '12'
-lat = 38
-lon = -107
+lat = 32
+lon = -100
 alt_ft = 45000.
 alt = alt_ft * 0.3048
 
 data, altitudes = process_data(day, month, year, hour, alt,
                                directory='../../data/weather/')
-
 key = '%i, %i' % (lat, lon)
 weather_data = data[key]
 
