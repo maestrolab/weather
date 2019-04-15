@@ -30,7 +30,7 @@ def boom_runner(data, cruise_altitude, j,
     nearfield_sig = pickle.load(open(nearfield_file, "rb"))
 
     # initialize sBOOM
-    sboom = SboomWrapper(CASE_DIR, exe="sboom_windows.dat.allow")
+    sboom = SboomWrapper(CASE_DIR)#, exe="sboom_windows.dat.allow")
 
     # temperature input (altitude ft, temperature F)
     temperature = data[key]['temperature']

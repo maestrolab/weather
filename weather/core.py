@@ -29,22 +29,21 @@ def process_noise(filename, transformation=None):
 
     lat = []
     lon = []
-    latlon = copy.deepcopy(noise_data['latlon'])
+    z = []
+    latlon = copy.deepcopy(list(noise_data.keys()))
 
     for i in range(len(latlon)):
         latlon_temp = [int(s) for s in latlon[i].split(',')]
         lat.append(latlon_temp[0])
         lon.append(latlon_temp[1])
-
-    # REMOVE this when z should be pyLdB input
-    z = copy.deepcopy(noise_data['noise'])
+        z.append(noise_data[latlon[i]]['noise'])
     if transformation is not None:
         z = transformation(z)
+
     # Make lists into arrays to graph
-    lon = makeFloats(lon)
-    lat = makeFloats(lat)
     lon = np.array(lon)
     lat = np.array(lat)
+    z = np.array(z)
     return np.vstack([lon, lat, z]).T
 
 

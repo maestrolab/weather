@@ -22,24 +22,24 @@ atm_inputs = []
 for i in range(len(line)-1):
     atm_inputs.append(float(line[i]))
 # Extract input values
-if atm_inputs[0]<10:
-    day="0" + str(int(atm_inputs[0]))
+if atm_inputs[0] < 10:
+    day = "0" + str(int(atm_inputs[0]))
 else:
-    day=str(int(atm_inputs[0]))
-if atm_inputs[1]<10:
-    month="0" + str(int(atm_inputs[1]))
+    day = str(int(atm_inputs[0]))
+if atm_inputs[1] < 10:
+    month = "0" + str(int(atm_inputs[1]))
 else:
-    month=str(int(atm_inputs[1]))
-year=str(int(atm_inputs[2]))
-if atm_inputs[3]==0:
-    hour="00"
-elif atm_inputs[2] <10:
+    month = str(int(atm_inputs[1]))
+year = str(int(atm_inputs[2]))
+if atm_inputs[3] == 0:
+    hour = "00"
+elif atm_inputs[2] < 10:
     hour = "0" + str(int(atm_inputs[3]))
 else:
-    hour=str(int(atm_inputs[3]))
-lat=atm_inputs[4]
-lon=atm_inputs[5]
-alt_ft=atm_inputs[6]
+    hour = str(int(atm_inputs[3]))
+lat = atm_inputs[4]
+lon = atm_inputs[5]
+alt_ft = atm_inputs[6]
 
 # Extracting data from database
 alt_m = alt_ft * 0.3048
