@@ -26,5 +26,5 @@ year = '2018'
 hour = '12'
 
 filename = "../../data/noise/" + year + "_" + month + "_" + day + "_" + hour
-data = process_noise(filename, transformation=fidell_CTL)
+data = process_noise(filename)
 contour(data, levels=np.arange(0, 110, 10), label='% Hightly Annoyed')
