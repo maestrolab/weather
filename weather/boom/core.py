@@ -298,23 +298,47 @@ def parametrize_humidity(humidity):
     ############################################################################
     # Points removed if altitude was above a certain threshold
     #   Works to an extent --> does not reduce number of data points enough
-    # threshold = 4001 # [ft]
+    # threshold = 4000 # [ft]
     # new_humidity = [h for h in humidity if h[0] < threshold]
     ############################################################################
+    # Points added separately to four corners and center of profile to study
+    #   the effect each one has on the perceived loudness.
+    #   Essentially looks at if certain humidity values effect perceived
+    #       loudness more or less at different altitudes.
+    #
+    # # humidity_altitude
+    # low_high = [15000.0,5.0] # humidity[-1]
+    # low_low = [150.0,5.0] # humidity[1]
+    # high_high = [15000.0,65.0] # humidity[-1]
+    # high_low = [150.0,65.0] # humidity[1]
+    #
+    # new_humidity = humidity[:1]
+    # new_humidity.append(high_low)
+    # [new_humidity.append(h) for h in humidity[1:]]
+    ############################################################################
+    new_humidity = [humidity[0]]
+    new_humidity.append(humidity[5])
+    new_humidity.append(humidity[10])
+    new_humidity.append(humidity[14])
+    #new_humidity.append(humidity[15])
+    new_humidity.append(humidity[-1])
 
     humidity_vals = [h[1] for h in new_humidity]
     alt_vals = [alt[0] for alt in new_humidity]
 
+    # Plot the humidity profile to help visualize differences between
+    #   parameterization methods.
     import matplotlib.pyplot as plt
 
     fig = plt.figure()
     plt.plot(humidity_vals, alt_vals)
     plt.xlabel('Relative Humidity')
-    plt.ylabel('Altitude [ft]')
+    plt.ylabel('Altitude [m]') # Check if altitude is in feet or meters
     plt.grid(True)
 
-    filename = 'Test.png'
+    filename = 'Test_1.png'
     plt.savefig('./../../data/weather/parametrized_humidity_profiles/' +
                 filename)
 
+    print(new_humidity)
     return new_humidity
