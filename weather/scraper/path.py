@@ -128,46 +128,11 @@ class Airframe(object):
             else:
                 i += 1
 
-        ########################################################################
-
-        # MAIN PROGRAM USED TO GENERATE PDF AT ONE TIMESTAMP
-
-        # for ica24 in typecodeDict[self.typecode]['icao24List']:
-        #     api = OpenSkyApi('jplilly25','Crossfit25')
-        #     try:
-        #         state = api.get_states(time_secs=self.timestamp,icao24=ica24)
-        #         if state.states:
-        #             if (state.states[0].velocity != 0) and (state.states[0].vertical_rate != None):
-        #                 self.velocity = np.append(self.velocity,
-        #                                     np.array(state.states[0].velocity))
-        #                 self.vertrate = np.append(self.vertrate,
-        #                                     np.array(state.states[0].vertical_rate))
-        #     except:
-        #         pass# print(ica24)
-
-        ########################################################################
         # Tested to see if there was a limit on number of icao24s in list.
         #   Does not work when inputting full list at once
         #   States found when len(list) == 500
         if len(typecodeDict[self.typecode]['icao24List']) > 500:
             typecodeDict[self.typecode]['icao24List'] = typecodeDict[self.typecode]['icao24List'][500:1000]
-        ########################################################################
-
-        # for timestamp in timestampList:
-        #     api = OpenSkyApi('jplilly25','Crossfit25')
-        #     try:
-        #         state = api.get_states(time_secs=timestamp,icao24=typecodeDict[self.typecode]['icao24List'])
-        #         try:
-        #             for n in range(len(state.states)):
-        #                 if state.states[n]:
-        #                     if (state.states[n].velocity != 0) and (state.states[n].vertical_rate != None):
-        #                         self.velocity = np.append(self.velocity, state.states[n].velocity)
-        #                         self.vertrate = np.append(self.vertrate, state.states[n].vertical_rate)
-        #         except:
-        #             pass
-        #     except:
-        #         print('get_states() failed to pull data from OpenSky-Network')
-        ########################################################################
         # Running until ~250 data points are found.
 
         timestamp = self.timestamp  # did not want to change self.timestamp value
@@ -229,7 +194,8 @@ class Airframe(object):
         Cl_o = 0.33
         incidenceAngle = 1  # [deg]
 
-        cos_alpha = np.linspace(np.cos(-5/180*np.pi), np.cos(15/180*np.pi), len(velocity))
+        cos_alpha = np.linspace(np.cos(-5/180*np.pi), np.cos(15/180*np.pi),
+                                len(velocity))
         cos_alpha = np.mean(cos_alpha)
         constant = 2*W/rho/(velocity)**2/S
 
@@ -316,26 +282,6 @@ class Airframe(object):
         X, Y = np.meshgrid(xgrid, ygrid)
 
         Z = np.reshape(pdf_points.T, X.shape)
-
-        ########################################################################
-        # Generate custom contour levels to better visualize data for A380
-        #   ('higher definition' at lower levels of probability)
-
-        # levels = np.array([0.0000])#[0.000, 0.000001, 0.000005, 0.00001, 0.00005, 0.0001, 0.001, 0.007])
-        #
-        # for i in range(0,16):
-        #     levels = np.append(levels, levels[i]+0.000025)
-        # #     levels = np.append(levels, 10**(i-10))
-        #
-        # for i in range(0,8):
-        #     levels = np.append(levels, levels[i+16]+0.0004)
-        # # levels = np.append(levels, [0.003, 0.005, 0.007])
-        # # print(levels)
-        ########################################################################
-
-        # Levels are manually set to better visualize distribution
-        #   NOTE: not set for contour plot considering conditional probability of
-        #       weight and (angle of attack, velocity)
 
         levels = np.array([0.0000])
 
