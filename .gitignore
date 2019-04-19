@@ -107,7 +107,6 @@ venv.bak/
 examples/boom/sBOOM
 examples/data_processing/sBOOM
 examples/boom/panair_files
-*.geojson
 examples/scraping/*.csv
 examples/scraping/*.p
 data/noise/*/*00.p
