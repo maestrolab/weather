@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import Rbf
 import pickle
+import dask.array as da
 from weather import process_noise
 from geojson import Polygon, Feature, FeatureCollection, dump
 
@@ -24,13 +25,25 @@ def refine_data(data, refinement=1., output_as_meshgrid=False):
     longitude = np.array(longitude).reshape((n_rows, n_columns))
     noise = np.array(noise).reshape((n_rows, n_columns))
     # Train Response surface
-    rbf = Rbf(latitude, longitude, noise)
+    # def euclidean_norm_numpy(x1, x2):
+        # return np.linalg.norm(x1 - x2, axis=0)
+    rbf = Rbf(latitude, longitude, noise) #, function = 'gaussian', norm=euclidean_norm_numpy)
 
     # Grid to interpolate
+
     x_interpolate = np.linspace(min_lat, max_lat, refinement*n_rows)
     y_interpolate = np.linspace(min_lon, max_lon, refinement*n_columns)
     X,Y = np.meshgrid(x_interpolate, y_interpolate)
-    F_interpolate = rbf(X, Y)
+    print(len(X.ravel()))
+
+
+
+    n1 = X.shape[1]
+    ix = da.from_array(X, chunks=(1, n1))
+    iy = da.from_array(Y, chunks=(1, n1))
+    iz = da.map_blocks(rbf, ix, iy)
+    F_interpolate = iz.compute()
+    # F_interpolate = rbf(X, Y)
     if not output_as_meshgrid:
         return(np.array([X.ravel(), Y.ravel(), F_interpolate.ravel()]).T)
     else:
@@ -63,7 +76,7 @@ hour = '12'
 filename = "../../data/noise/" + year + month + day + '/full'
 data = process_noise(filename)
 
-refinement = 1.5
+refinement = 4
 data = refine_data(data, refinement)
 generate_geo(data, refinement)
 # print(F_interpolate)
