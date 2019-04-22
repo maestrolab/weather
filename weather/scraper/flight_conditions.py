@@ -32,18 +32,17 @@ class Airframe(object):
 
     def __init__(self, timestamp=1549729462, airframe='C172',
                  filepath='../../data/flight_plan/v_aoa_pickles/icao24s_',
+                 csv_filename='aircraftDatabase_1549729462.csv',
                  properties=properties):
         self.airframe = airframe
         self.timestamp = timestamp
         self.filepath = filepath
+        self.csv_filename = csv_filename
         self.properties = properties
 
-    def update_icao24s(self,
-                       filepath='../../data/flight_plan/aircraftDatabases/',
-                       filename='aircraftDatabase_1549729462.csv'):
-        """Update list of icao24s for all airframes.
-        Generates icao24s_self.timestamp.p pickle
-        """
+    def _update_icao24s(self, csv_filename, desired_airframes,
+                       filepath='../../data/flight_plan/aircraftDatabases/',:
+        """Update list of icao24s for all airframes."""
 
         type_structure = ['string' for n in range(3)]
 
@@ -54,31 +53,24 @@ class Airframe(object):
             raise SyntaxError('Workbook must have columns: icao24, typecode,\
                               model')
 
-        airframeDict = {'B737': {}, 'B747': {}, 'B757': {}, 'B767': {},
-                        'B777': {}, 'B787': {},'A310': {}, 'A318': {},
-                        'A319': {}, 'A320': {}, 'A321': {},'A330': {},
-                        'A340': {}, 'A350': {}, 'A380': {}, 'C172': {},
-                        'C180': {},'C182': {}}
-        airframeKeys = list(airframeDict.keys())
-        airframeDict = {key: {'icao24List': []} for key in airframeDict}
+        airframeDict = {airframe:{'icao24List':[]} for airframe in
+                        desired_airframes}
 
-        # Pull icao24s for Airbus and Boeing airframes.
-        for key in airframeKeys[:15]:
-            airframeDict[key]['icao24List'] = [icao24 for airframe in data['typecode'] if airframe[0:3] == key[0:3]]
+        for key in desired_airframes:
+            # Pull icao24s for Cessna airframes.
+            if key[0] == 'C':
+                airframeDict[key]['icao24List'] = [icao24 for airframe in
+                data['model'] if airframe == key]
+            # Pull icao24s for Airbus, Boeing, and all other airframes.
+            else:
+                airframeDict[key]['icao24List'] = [icao24 for airframe in
+                data['typecode'] if airframe[0:3] == key[0:3]]
 
-        # Pull icao24s for Cessna airframes.
-        for key in airframeKeys[15:]:
-            airframeDict[key]['icao24List'] = [icao24 for airframe in data['model'] if airframe == key]
+        return airframeDict
 
-        icao24s = open('../../data/flight_plan/icao24_lists/icao24s_'
-                       + str(self.timestamp) + '.p', 'wb')
-        pickle.dump(airframeDict, icao24s)
-        icao24s.close()
+    def update_OpenSkyApi(self, desired_airframes=['C172']):
 
-    def update_OpenSkyApi(self):
-
-        airframeDict = pickle.load(open(self.filepath + self.airframe
-                                        + str(self.timestamp) + '.p', 'rb'))
+        self._update_icao24s(self.csv_filename, desired_airframes)
 
         # Filtering out icao24s that are invalid
         i = 0
@@ -96,7 +88,7 @@ class Airframe(object):
             airframeDict[self.airframe]['icao24List'] = \
             airframeDict[self.airframe]['icao24List'][500:1000]
 
-        timestamp = self.timestamp  # did not want to change self.timestamp value
+        timestamp = self.timestamp
 
         while len(self.velocity) < 1000:
             # Checks to see if state present at timestamp
@@ -122,18 +114,17 @@ class Airframe(object):
                                     self.climb_rate = np.append(
                                         self.climb_rate,
                                         state.states[n].vertical_rate)
-                                if state.states[n].velocity > 80:
-                                    print(state.states[n].icao24)
                     except:
-                        pass
+                        print('No states were pulled from the OpenSkyApi.')
             except:
-                pass
-            # timestamp value is updated to the next 15 minute mark
+                print('Did not connect to OpenSkyApi.')
+
             timestamp += 15*60
 
         icao24s = open(self.filepath + str(self.typecode) + '_' +
                        str(self.timestamp) + '.p', 'wb')
-        pickle.dump({'velocity': self.velocity, 'climb_rate': self.climb_rate}, icao24s)
+        pickle.dump({'velocity': self.velocity, 'climb_rate': self.climb_rate},
+                     icao24s)
         icao24s.close()
 
     def calculate_aoa(self, weight, velocity):
