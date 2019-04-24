@@ -3,8 +3,11 @@ import pickle
 import numpy as np
 from scipy import interpolate
 
-from pyldb import perceivedloudness
-from rapidboom.sboomwrapper import SboomWrapper
+try:
+    from pyldb import perceivedloudness
+    from rapidboom.sboomwrapper import SboomWrapper
+except:
+    print('Boom analysis is disabled')
 from weather import makeFloats, windToXY
 
 
