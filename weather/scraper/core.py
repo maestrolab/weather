@@ -153,16 +153,13 @@ def balloon_scraper(YEAR, MONTH, DAY, HOUR, directory='./'):
     return all_data
 
 
-def noaa_scraper(YEAR, MONTH, DAY, HOUR):
+def noaa_scraper(YEAR, MONTH, DAY, HOUR, x=np.linspace(13, 58, 46),
+                 y=np.linspace(-144, -53, 92)):
 
     # Initialize data dictionary
     all_data = {'latitude': [], 'longitude': [], 'pressure': [], 'height': [],
                 'temperature': [], 'humidity': [], 'wind_direction': [],
                 'wind_speed': []}
-
-    # Lat, Lon Locations on TwisterData.com grid
-    x = np.linspace(13, 14, 1)  # 58, 46)  # lat - (13,58)
-    y = np.linspace(-144, -53, 92)  # lon - (-144,-53)
 
     for j in range(len(x)):
         for k in range(len(y)):
@@ -182,6 +179,7 @@ def noaa_scraper(YEAR, MONTH, DAY, HOUR):
                                      '=2&unit=M_ABOVE_GROUND&maximize=n&mode=sin' +
                                      'glemap&sounding=y&output=text&view=large&a' +
                                      'rchive=false&sndclick=y', timeout=5)
+
                     q += 1
                 except IOError:
                     print('ERROR')

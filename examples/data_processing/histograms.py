@@ -26,41 +26,52 @@ month = '06'
 year = '2018'
 hour = '12'
 
+min_noise = 77.75
+max_noise = 88.25
+n_noise = 21
+
 # Get noise data
 filename = "../../data/noise/noise_per_county"
 noise_data = pickle.load(open(filename + '.p', 'rb'))
 noise = copy.deepcopy(noise_data[:, 3])
-pop = noise_data[:, 2]/sum(noise_data[:, 2])
-annoyance = exterior_annoyance(noise)
+pop = noise_data[:, 2]
 
-# Organizing data
-hist, bins = np.histogram(noise, bins=np.arange(79, 89, .5), density=True)
-inds = np.digitize(noise, bins)
-pop_level = np.zeros(len(bins))
-annoyance_level = np.zeros(len(bins))
-print(len(noise), len(annoyance))
-print(len(hist), len(bins))
+# Processing data into bins
+step = (max_noise - min_noise)/n_noise
+bins = np.arange(min_noise, max_noise + step, step)
+hist, bin_edges = np.histogram(noise, bins=bins, density=True)
+
+# Processing population data in regards to noise
+inds = np.digitize(noise, bin_edges)
+pop_level = np.zeros(len(bin_edges)-1)
 for i in range(len(inds)):
     pop_level[inds[i]-1] += pop[i]
-    annoyance_level[inds[i]-1] += pop[i]*annoyance[i]/100.
-print('bins', bins)
-print('pop', pop_level)
-fig, ax1 = plt.subplots()
+pop_level = pop_level/sum(pop_level*step)
 
-# ax2.plot(z, z2, 'r')
-ax1.bar(bins, pop_level, color='b', width=0.4, label='Exposed population')
-ax1.bar(bins, annoyance_level, color='r', width=0.4, label='Population annoyed')
-ax1.set_ylabel('Perceived loudness/Annoyance distribution', color='r')
-ax1.tick_params('y', colors='r')
+print('Integral of noise probability', sum(hist)*step)
+print('Integral of population probability', sum(pop_level)*step)
 
-kde = gaussian_kde(noise)
-x = np.linspace(79, 89, 200)
-ax1.plot(x, kde(x), '--k', lw=3, label='PLdB probability')
-ax1.set_xlabel('Perceived Loudness in dB')
-# Make the y-axis label, ticks and tick labels match the line color.
-ax1.set_ylabel('Probability', color='k')
-ax1.tick_params('y', colors='k')
+for_excel = np.array([.5*(bin_edges[:-1] + bin_edges[1:]), pop_level, hist]).T
+for i in range(len(for_excel)):
+    print(for_excel[i][0], for_excel[i][1], for_excel[i][2],)
 
-fig.tight_layout()
-plt.legend()
-plt.show()
+# # Plotting loudness data
+# fig, ax1 = plt.subplots()
+# ax1.bar(.5*(bin_edges[:-1] + bin_edges[1:]), pop_level,
+#         width=step, color='r', alpha=0.5, linewidth=1,
+#         edgecolor='r')
+# ax1.set_xlabel('Perceived Level in dB')
+# ax1.set_ylabel('Exposed probability', color='r')
+# ax1.tick_params('y', colors='r')
+# plt.xlim(min_noise, max_noise)
+# plt.ylim(0, 0.25)
+#
+# # Plotting noise data
+# ax2 = ax1.twinx()
+# ax2.hist(noise, bins=bins, color='b', alpha=0.5, density=True, linewidth=1,
+#          edgecolor='b')
+# ax2.set_ylabel('Geographic Probability', color='b')
+# ax2.tick_params('y', colors='b')
+# plt.ylim(0, 0.25)
+# fig.tight_layout()
+# plt.show()

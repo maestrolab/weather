@@ -4,6 +4,7 @@ Makes a contour plot of noise values output from pyLdB.
 '''
 
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
 import pickle
@@ -14,14 +15,13 @@ import random
 from weather import makeFloats
 
 def contour(data, levels=None, transformation=None, label="Perceived Loudness, PLdB"):
+    matplotlib.use('TkAgg')
     lon, lat, z = data.T
-    print(z)
-    numcols, numrows = len(lon), len(lat)
-    
-    plt.figure()
-    plt.scatter(lon,lat)
-    plt.show()
-    
+    if transformation is not None:
+        z = transformation(z)
+
+    numcols, numrows = len(set(lon)), len(set(lat))
+
     fig = plt.figure(figsize=(12, 6))
 
     # bounds = np.arange(0,110,10) - FIXME to match output
@@ -50,5 +50,4 @@ def contour(data, levels=None, transformation=None, label="Perceived Loudness, P
     cbar = m.colorbar()
     degree_sign = '\N{DEGREE SIGN}'
     cbar.set_label(label)
-
     plt.show()

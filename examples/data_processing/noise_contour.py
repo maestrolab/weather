@@ -20,11 +20,19 @@ def fidell_CTL(noise, growth=0.47, CTL=81.3, A_star=None):
     return P*100
 
 
+def correlation(noise):
+    P = np.exp(-10.48589)*1.129**noise/(1+np.exp(-10.48589) * 1.129**noise)
+    return P*100
+
+
 day = '18'
 month = '06'
 year = '2018'
 hour = '12'
+altitude = '50000'
 
-filename = "../../data/noise/" + year + month + day + '/full'
+filename = "../../data/noise/" + year + month + day + '_' + hour + '_' + altitude
 data = process_noise(filename)
-contour(data, levels=np.arange(76.5, 91.5, 1.5), label='PLdB')
+contour(data, levels=np.arange(20, 58, 4),
+        transformation=correlation,
+        label='Percentage of High Annoyance')

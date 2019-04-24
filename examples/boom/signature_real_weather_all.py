@@ -6,9 +6,7 @@ month = '06'
 year = '2018'
 hour = '12'
 
-lat = 38
-lon = -107
-alt_ft = 45000.
+alt_ft = 50000.
 alt = alt_ft * 0.3048
 
 path = '../../data/'
@@ -32,5 +30,6 @@ for index in range(len(data.keys())):
                  str(int(round(index, -1))) + ".p", "wb")
         pickle.dump(data, f)
         f.close()
-f = open(path + "/noise/" + year + month + day + '/' + "full.p", "wb")
+f = open(path + "/noise/" + year + month + day + '_' + hour + '_'
+         + str(alt_ft) + ".p", "wb")
 pickle.dump(data, f)
