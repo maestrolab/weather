@@ -50,25 +50,27 @@ class Airframe(object):
         data = output_reader(filepath + filename, separator=[','],
                              type_structure=type_structure)
 
-        if list(data.keys()) != ['icao24','typecode','model']:
+        if list(data.keys()) != ['icao24', 'typecode', 'model']:
             raise SyntaxError('Workbook must have columns: icao24, typecode,\
                               model')
 
         airframeDict = {'B737': {}, 'B747': {}, 'B757': {}, 'B767': {},
-                        'B777': {}, 'B787': {},'A310': {}, 'A318': {},
-                        'A319': {}, 'A320': {}, 'A321': {},'A330': {},
+                        'B777': {}, 'B787': {}, 'A310': {}, 'A318': {},
+                        'A319': {}, 'A320': {}, 'A321': {}, 'A330': {},
                         'A340': {}, 'A350': {}, 'A380': {}, 'C172': {},
-                        'C180': {},'C182': {}}
+                        'C180': {}, 'C182': {}}
         airframeKeys = list(airframeDict.keys())
         airframeDict = {key: {'icao24List': []} for key in airframeDict}
 
         # Pull icao24s for Airbus and Boeing airframes.
         for key in airframeKeys[:15]:
-            airframeDict[key]['icao24List'] = [icao24 for airframe in data['typecode'] if airframe[0:3] == key[0:3]]
+            airframeDict[key]['icao24List'] = [
+                icao24 for airframe in data['typecode'] if airframe[0:3] == key[0:3]]
 
         # Pull icao24s for Cessna airframes.
         for key in airframeKeys[15:]:
-            airframeDict[key]['icao24List'] = [icao24 for airframe in data['model'] if airframe == key]
+            airframeDict[key]['icao24List'] = [
+                icao24 for airframe in data['model'] if airframe == key]
 
         icao24s = open('../../data/flight_plan/icao24_lists/icao24s_'
                        + str(self.timestamp) + '.p', 'wb')
@@ -94,7 +96,7 @@ class Airframe(object):
         # OpenSkyApi only works for lists with lengths less than ~500
         if len(airframeDict[self.airframe]['icao24List']) > 500:
             airframeDict[self.airframe]['icao24List'] = \
-            airframeDict[self.airframe]['icao24List'][500:1000]
+                airframeDict[self.airframe]['icao24List'][500:1000]
 
         timestamp = self.timestamp  # did not want to change self.timestamp value
 
@@ -116,12 +118,12 @@ class Airframe(object):
                         for n in range(len(state.states)):
                             if state.states[n]:
                                 if (state.states[n].velocity != 0) and
-                                   (state.states[n].vertical_rate != None):
-                                    self.velocity = np.append(
-                                        self.velocity, state.states[n].velocity)
-                                    self.climb_rate = np.append(
-                                        self.climb_rate,
-                                        state.states[n].vertical_rate)
+                                    (state.states[n].vertical_rate != None):
+                                        self.velocity = np.append(
+                                            self.velocity, state.states[n].velocity)
+                                        self.climb_rate = np.append(
+                                            self.climb_rate,
+                                            state.states[n].vertical_rate)
                                 if state.states[n].velocity > 80:
                                     print(state.states[n].icao24)
                     except:

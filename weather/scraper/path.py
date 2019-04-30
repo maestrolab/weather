@@ -97,8 +97,8 @@ class Airframe(object):
                 i += 1
             typecodeDict[key]['icao24List'] = icao24List
 
-        icao24s = open('../../data/flight_plan/icao24s_'
-                       + str(self.timestamp) + '.p', 'wb')
+        icao24s = open('../../data/flight_plan/icao24s_' + self.airframe + '_'
+                       + str(self.timestamp) + 'test.p', 'wb')
         pickle.dump(typecodeDict, icao24s)
         icao24s.close()
 

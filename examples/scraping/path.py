@@ -12,16 +12,16 @@ typecodeList = ['B737', 'B747', 'B757', 'B767', 'B777', 'B787',
                 'C182']
 
 airFrame = Airframe(typecode=typecodeList[15], timestamp=1549036800)
-airFrame.retrieve_data()
-# airFrame.update_icao24s()
-# start_time = time.time()
-# airFrame.update_OpenSkyApi() # must run for each typecode before pdf generation
-# end_time = time.time()
-# elapsed_time = end_time - start_time
-# print('Elapsed Time = %.2f' % elapsed_time)
-# pdf = airFrame.generate_pdf()
-# print(pdf)
-
+# airFrame.retrieve_data()
+airFrame.update_icao24s()
+start_time = time.time()
+airFrame.update_OpenSkyApi() # must run for each typecode before pdf generation
+end_time = time.time()
+elapsed_time = end_time - start_time
+print('Elapsed Time = %.2f' % elapsed_time)
+pdf = airFrame.generate_pdf()
+print(pdf)
+BREAK
 # np.linspace(np.amin(self.angleOfAttack), np.amax(self.angleOfAttack), 1000)
 xgrid = np.linspace(-5, 35, 1000)
 # np.linspace(np.amin(self.velocity), np.amax(self.velocity), 1000)
