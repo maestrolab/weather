@@ -1,8 +1,8 @@
 import pickle
 import numpy as np
-from weather import process_noise
-from weather.boom import boom_runner, process_data
-from weather.plotting.noise import contour
+from weather import process_database
+from weather.boom import boom_runner
+from weather.plotting import contour
 
 
 def fidell_CTL(noise, growth=0.47, CTL=81.3, A_star=None):
@@ -32,7 +32,6 @@ hour = '12'
 altitude = '50000'
 
 filename = "../../data/noise/" + year + month + day + '_' + hour + '_' + altitude
-data = process_noise(filename)
+data = process_database(filename, transformation=correlation)
 contour(data, levels=np.arange(20, 58, 4),
-        transformation=correlation,
         label='Percentage of High Annoyance')

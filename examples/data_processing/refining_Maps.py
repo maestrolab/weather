@@ -3,8 +3,9 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import Rbf
 import pickle
 import dask.array as da
-from weather import process_noise
+from weather import process_database
 from geojson import Polygon, Feature, FeatureCollection, dump
+
 
 def refine_data(data, refinement=1., output_as_meshgrid=False):
     latitude = []
@@ -26,17 +27,15 @@ def refine_data(data, refinement=1., output_as_meshgrid=False):
     noise = np.array(noise).reshape((n_rows, n_columns))
     # Train Response surface
     # def euclidean_norm_numpy(x1, x2):
-        # return np.linalg.norm(x1 - x2, axis=0)
-    rbf = Rbf(latitude, longitude, noise) #, function = 'gaussian', norm=euclidean_norm_numpy)
+    # return np.linalg.norm(x1 - x2, axis=0)
+    rbf = Rbf(latitude, longitude, noise)  # , function = 'gaussian', norm=euclidean_norm_numpy)
 
     # Grid to interpolate
 
     x_interpolate = np.linspace(min_lat, max_lat, refinement*n_rows)
     y_interpolate = np.linspace(min_lon, max_lon, refinement*n_columns)
-    X,Y = np.meshgrid(x_interpolate, y_interpolate)
+    X, Y = np.meshgrid(x_interpolate, y_interpolate)
     print(len(X.ravel()))
-
-
 
     n1 = X.shape[1]
     ix = da.from_array(X, chunks=(1, n1))
@@ -49,7 +48,8 @@ def refine_data(data, refinement=1., output_as_meshgrid=False):
     else:
         return(X, Y, F_interpolate)
 
-def generate_geo(data, refinement = 1.):
+
+def generate_geo(data, refinement=1.):
     features = []
     s = 0.5/refinement
     for i in range(len(data)):
@@ -68,13 +68,14 @@ def generate_geo(data, refinement = 1.):
     with open('loudness.geojson', 'w') as f:
         dump(feature_collection, f)
 
+
 day = '18'
 month = '06'
 year = '2018'
 hour = '12'
 
 filename = "../../data/noise/" + year + month + day + '/full'
-data = process_noise(filename)
+data = process_database(filename)
 
 refinement = 4
 data = refine_data(data, refinement)

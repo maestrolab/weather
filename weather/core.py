@@ -24,7 +24,9 @@ except:
     pass
 
 
-def process_noise(filename, transformation=None):
+def process_database(filename, variable_name='noise', transformation=None):
+    ''' Variable names = 'noise', 'temperature', 'wind_x', 'wind_y', 'pressure',
+        '''
     noise_data = pickle.load(open(filename + '.p', 'rb'))
 
     lat = []
@@ -36,14 +38,14 @@ def process_noise(filename, transformation=None):
         latlon_temp = [int(s) for s in latlon[i].split(',')]
         lat.append(latlon_temp[0])
         lon.append(latlon_temp[1])
-        z.append(noise_data[latlon[i]]['noise'])
-    if transformation is not None:
-        z = transformation(z)
+        z.append(noise_data[latlon[i]][variable_name])
 
     # Make lists into arrays to graph
     lon = np.array(lon)
     lat = np.array(lat)
     z = np.array(z)
+    if transformation is not None:
+        z = transformation(z)
     return np.vstack([lon, lat, z]).T
 
 

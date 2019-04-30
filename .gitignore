@@ -111,3 +111,4 @@ examples/scraping/*.csv
 examples/scraping/*.p
 data/noise/*/*00.p
 *.pyc
+*.geojson

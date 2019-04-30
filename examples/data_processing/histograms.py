@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import copy
 from scipy.stats import gaussian_kde
-from weather import process_noise
 
 
 def exterior_annoyance(PL):

@@ -1,5 +1,5 @@
 import pickle
-from weather import process_noise
+from weather import process_database
 from geojson import Polygon, Feature, FeatureCollection, dump
 
 day = '18'
@@ -8,14 +8,14 @@ year = '2018'
 hour = '12'
 
 filename = "../../data/noise/" + year + month + day + '/full'
-data = process_noise(filename)
+data = process_database(filename)
 
 features = []
 for i in range(len(data)):
     print(i)
     lat, lon, noise = data[i]
-    polygon = Polygon([[(lat-0.5, lon-0.5),(lat+0.5,lon-0.5),
-                        (lat+0.5,lon+0.5),(lat-0.5,lon+0.5),
+    polygon = Polygon([[(lat-0.5, lon-0.5), (lat+0.5, lon-0.5),
+                        (lat+0.5, lon+0.5), (lat-0.5, lon+0.5),
                         (lat-0.5, lon-0.5)]])
     features.append(Feature(geometry=polygon, properties={"Noise": noise}))
 
