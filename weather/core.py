@@ -118,3 +118,12 @@ def makeFloats(w_var):
         w_var[i] = float(w_var[i])
 
     return w_var
+
+def convertToFahrenheit(temperature_C):
+    '''convert_to_fahrenheit takes a list of temperatures in degrees celsius
+    and converts the values to units of degrees fahrenheit.
+    '''
+    temperature_F = [temperature_C[i]*(9/5)+32 for i in
+                     range(len(temperature_C))]
+
+    return temperature_F

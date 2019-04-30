@@ -11,7 +11,9 @@ alt_ft = 45000.
 alt = alt_ft * 0.3048
 
 data, altitudes = process_data(day, month, year, hour, alt,
-                               directory='../../data/weather/')
+                               directory='../../data/weather/',
+                               convert_to_fahrenheit=True)
+
 key = '%i, %i' % (lat, lon)
 weather_data = data[key]
 

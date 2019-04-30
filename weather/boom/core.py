@@ -8,7 +8,7 @@ try:
     from rapidboom.sboomwrapper import SboomWrapper
 except:
     print('Boom analysis is disabled')
-from weather import makeFloats, windToXY
+from weather import makeFloats, windToXY, convertToFahrenheit
 
 
 def boom_runner(data, cruise_altitude, j,
@@ -77,7 +77,8 @@ def process_data(day, month, year, hour, altitude,
                  outputs_of_interest=['temperature', 'height',
                                       'humidity', 'wind_speed',
                                       'wind_direction', 'pressure',
-                                      'latitude', 'longitude']):
+                                      'latitude', 'longitude'],
+                convert_to_fahrenheit=False):
     ''' process_data makes a dictionary output that contains the lists
     specified by the strings given in outputs_of_interest
     '''
@@ -98,6 +99,10 @@ def process_data(day, month, year, hour, altitude,
     # Make everything floats
     for key in outputs_of_interest:
         output[key] = makeFloats(output[key])
+
+    # Convert temperature to fahrenheit
+    if convert_to_fahrenheit:
+        output['temperature'] = convertToFahrenheit(output['temperature'])
 
     # Convert wind data
     wind_x, wind_y = windToXY(output['wind_speed'],
