@@ -13,7 +13,7 @@ C172_props = properties({'Cl_alpha': 5.143, 'Cl_0': 0.31,
 C172 = Airframe(airframe='C172', timestamp=1549036800,
                 filepath='../../data/flight_plan/v_aoa_pickles/icao24s_',
                 properties=C172_props)
-C172.retrieve_data()
+C172.retrieve_data(load_data=True)
 C172.train_pdf(1000)
 
 # Calculating total probability
