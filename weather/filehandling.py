@@ -217,23 +217,25 @@ def output_reader(filename, separator='\t', output=None,  # noqa C901
                             + separator,
                             ' '
                             ).replace(
-                                separator
-                                + separator,
-                                ' '
+                               separator
+                               + separator,
+                               ' '
                                 ).replace(
                                     separator,
                                     ' '
                                     ).replace(
                                         "\n", ""
                                         ).replace(
-                                            '---------', ''
+                                            "\r", ""
                                             ).replace(
-                                                '--------', ''
+                                                '---------', ''
                                                 ).replace(
-                                                    '-------', ''
+                                                    '--------', ''
                                                     ).replace(
-                                                        '------', ''
-                                                        )
+                                                        '-------', ''
+                                                        ).replace(
+                                                            '------', ''
+                                                            )
 
 
                     line_components = " -".join(line.rsplit("-",1))

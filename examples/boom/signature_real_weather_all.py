@@ -4,14 +4,15 @@ from weather.boom import boom_runner, process_data
 day = '18'
 month = '06'
 year = '2018'
-hour = '12'
+hour = '12_'
 
 alt_ft = 50000.
 alt = alt_ft * 0.3048
 
 path = '../../data/'
 data, altitudes = process_data(day, month, year, hour, alt,
-                               directory=path + 'weather/')
+                               directory=path + 'weather/',
+                               convert_to_fahrenheit=True)
 
 key_list = list(data.keys())
 for index in range(len(data.keys())):
