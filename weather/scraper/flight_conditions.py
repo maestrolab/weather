@@ -4,9 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import fixed_point
 from sklearn.neighbors.kde import KernelDensity
+from pandas import read_csv
 
 from opensky_api import OpenSkyApi
-from weather.filehandling import output_reader
 
 
 class properties(object):
@@ -42,12 +42,19 @@ class Airframe(object):
         self.properties = properties
 
     def _update_icao24s(self, csv_filepath, desired_airframes):
-        """Update list of icao24s for all airframes."""
+        '''Update list of icao24s for all airframes.'''
 
-        type_structure = ['string' for n in range(3)]
+        # Read csv file
+        dtype = {'icao24':'str', 'typecode':'str', 'model':'str'}
+        data = read_csv(self.csv_filepath, sep=',', header=0,
+                        encoding='latin-1', skiprows=[1], dtype=dtype)
 
-        data = output_reader(csv_filepath, separator=[','],
-                             type_structure=type_structure)
+        # Convert Dataframe to dictionary; convert 'model' values to string
+        data = {'icao24':data['icao24'].values,
+                'typecode':data['typecode'].values,
+                'model':data['model'].values}
+        data['model'] = [str(data['model'][i]) for i in
+                         range(len(data['model']))]
 
         if list(data.keys()) != ['icao24','typecode','model']:
             raise SyntaxError('Workbook must have columns: icao24, typecode, '
@@ -73,69 +80,92 @@ class Airframe(object):
                           num_data_points=1000, time_increment=15,
                           save_data=True):
 
+        def filter_icao24s(icao24_list):
+            '''filter_icao24s removes icao24 codes that are invalid (length is
+            less than 6 characters)'''
+            i = 0
+            while i < len(icao24_list):
+                if len(icao24_list[i]) != 6:
+                    icao24_list = np.append(icao24_list[:i],icao24_list[i+1:])
+                else:
+                    i += 1
+
+                return icao24_list
+
+        def configure_icao24s(icao24_list):
+            '''configure_icao24s converts a list of icao24s to a dictionary of
+            icao24 lists each with a length equal to or less than 500 elements'''
+            icao24_dictionary = {}
+            if len(icao24_list) > 500:
+                num_lists = np.ceil(len(icao24_list)/500)
+                for n in range(int(num_lists)):
+                    try:
+                        icao24_dictionary[n] = icao24_list[0+500*n:500+500*n]
+                    except(IndexError):
+                        icao24_dictionary[n] = icao24_list[0+500*n:]
+            else:
+                icao24_dictionary[0] = icao24_list
+
+            return icao24_dictionary
+
+        def scrape_opensky_data(timestamp_list, icao24s, flight_parameters):
+            '''Scrape data at a given timestamp for a list of icao24s.'''
+            for t in timestamp_list:
+                api = OpenSkyApi('jplilly25', 'Crossfit25')
+                state = api.get_states(time_secs=t, icao24=icao24s)
+                for n in range(len(state.states)):
+                    if state.states[n]:
+                        if (state.states[n].velocity != 0) and\
+                           (state.states[n].vertical_rate != None) and\
+                           (state.states[n].velocity != None):
+                            flight_parameters['velocity'] = np.append(
+                                                flight_parameters['velocity'],
+                                                state.states[n].velocity)
+                            flight_parameters['climb_rate'] = np.append(
+                                                flight_parameters['climb_rate'],
+                                                state.states[n].vertical_rate)
+                            flight_parameters['altitude'] = np.append(
+                                                flight_parameters['altitude'],
+                                                state.states[n].baro_altitude)
+            return flight_parameters
+
         airframeDict = self._update_icao24s(self.csv_filepath, desired_airframes)
 
-        # Filtering out icao24s that are invalid
-        i = 0
-        while i < len(airframeDict[self.airframe]['icao24List']):
-            if len(airframeDict[self.airframe]['icao24List'][i]) != 6:
-                airframeDict[self.airframe]['icao24List'] = np.append(
-                    airframeDict[self.airframe]['icao24List'][:i],
-                    airframeDict[self.airframe]
-                    ['icao24List'][i+1:])
-            else:
-                i += 1
+        icao24s = filter_icao24s(airframeDict[self.airframe]['icao24List'])
 
-        # OpenSkyApi only works for lists with lengths less than ~500
-        if len(airframeDict[self.airframe]['icao24List']) > 500:
-            airframeDict[self.airframe]['icao24List'] = \
-            airframeDict[self.airframe]['icao24List'][:500]
+        # List of icao24s is converted to a dictionary (deals with case when
+        #   length of list is greater than 500 elements)
+        icao24s = configure_icao24s(airframeDict[self.airframe]['icao24List'])
 
         timestamp = self.timestamp
-        velocity = []
-        climb_rate = []
-        altitude = []
+        flight_parameters = {'velocity':[], 'climb_rate':[], 'altitude':[]}
 
-        while len(velocity) < num_data_points:
-            # Checks to see if airframe data is present at the current timestamp
-            api = OpenSkyApi('jplilly25', 'Crossfit25')
-            state = api.get_states(time_secs=timestamp,
-                                   icao24=airframeDict[self.airframe]['icao24List'])
+        while len(flight_parameters['velocity']) < num_data_points:
+            for n in list(icao24s.keys()):
+                # Checks to see if airframe data is present at the current timestamp
+                api = OpenSkyApi('jplilly25', 'Crossfit25')
+                state = api.get_states(time_secs=timestamp, icao24=icao24s[n])
 
-            # If a airframe data is present at the current timestamp, sample
-            #   surrounding timestamps for more airframe data.
-            if state.states:
-                t1 = timestamp - ((time_increment-1)*60)
-                t2 = timestamp + ((time_increment-1)*60)
-                timestampList = np.linspace(t1, t2, (t2-t1)/60+1)
-                for t in timestampList:
-                    api = OpenSkyApi('jplilly25', 'Crossfit25')
-                    state = api.get_states(
-                        time_secs=t, icao24=airframeDict[self.airframe]
-                        ['icao24List'])
-                    for n in range(len(state.states)):
-                        if state.states[n]:
-                            if (state.states[n].velocity != 0) and\
-                               (state.states[n].vertical_rate != None) and\
-                               (state.states[n].velocity != None):
-                                velocity = np.append(velocity,
-                                            state.states[n].velocity)
-                                climb_rate = np.append(climb_rate,
-                                    state.states[n].vertical_rate)
-                                altitude = np.append(altitude,
-                                    state.states[n].baro_altitude)
+                # If a airframe data is present at the current timestamp, sample
+                #   surrounding timestamps for more airframe data.
+                if state.states:
+                    t1 = timestamp - ((time_increment-1)*60)
+                    t2 = timestamp + ((time_increment-1)*60)
+                    timestamp_list = np.linspace(t1, t2, (t2-t1)/60+1)
+                    flight_parameters = scrape_opensky_data(timestamp_list,
+                                                 icao24s[n], flight_parameters)
             timestamp += time_increment*60
 
         # Storing values
         if save_data:
             icao24s = open(self.filepath + str(self.airframe) + '_' +
                            str(self.timestamp) + '.p', 'wb')
-            pickle.dump({'velocity': velocity, 'climb_rate': climb_rate,
-                         'altitude': altitude}, icao24s)
+            pickle.dump(flight_parameters, icao24s)
             icao24s.close()
-        self.velocity = np.array(velocity, dtype='float')
-        self.climb_rate = np.array(climb_rate, dtype='float')
-        self.altitude = np.array(altitude, dtype='float')
+        self.velocity = np.array(flight_parameters['velocity'], dtype='float')
+        self.climb_rate = np.array(flight_parameters['climb_rate'],
+                                   dtype='float')
+        self.altitude = np.array(flight_parameters['altitude'], dtype='float')
 
     def calculate_aoa(self, weight, velocity):
         # If input is not list/array convert it to one
