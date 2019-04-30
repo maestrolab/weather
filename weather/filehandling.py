@@ -216,10 +216,10 @@ def output_reader(filename, separator='\t', output=None,  # noqa C901
                             + separator
                             + separator,
                             ' '
-                            #).replace(
-                            #    separator
-                            #    + separator,
-                            #    ' '
+                            ).replace(
+                               separator
+                               + separator,
+                               ' '
                                 ).replace(
                                     separator,
                                     ' '
@@ -242,9 +242,9 @@ def output_reader(filename, separator='\t', output=None,  # noqa C901
                     line_components = line_components.split(' ')
                     #line_components = line.split(' ')
 
-                    # n_del = line_components.count('')
-                    # for n in range(0, n_del):
-                    #     line_components.remove('')
+                    n_del = line_components.count('')
+                    for n in range(0, n_del):
+                        line_components.remove('')
 
                     if line_components != []:
                         for j in range(0, len(header)):
