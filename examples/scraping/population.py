@@ -13,8 +13,9 @@ day = '18'
 month = '06'
 year = '2018'
 hour = '12'
+altitude = '50000'
 
-filename = "../../data/noise/" + year + "_" + month + "_" + day + "_" + hour
+filename = "../../data/noise/" + year + month + day + "_" + hour + "_" + altitude
 data = process_noise(filename)
 lon, lat, noise = data.T
 rbf = Rbf(lon, lat, noise)  # compared for same lat and lon and they look good

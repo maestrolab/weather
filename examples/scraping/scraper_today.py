@@ -10,6 +10,9 @@ import datetime
 year = str(datetime.date.today().strftime('%Y'))
 month = str(datetime.date.today().strftime('%m'))
 day = str(datetime.date.today().strftime('%d'))
+year = '2018'
+month = '12'
+day = '21'
 hour = '12'
 
 noaa_scraper(year, month, day, hour)
