@@ -109,7 +109,8 @@ class Airframe(object):
             return icao24_dictionary
 
         def scrape_opensky_data(timestamp_list, icao24s, flight_parameters):
-            '''Scrape data at a given timestamp for a list of icao24s.'''
+            '''scrape_opensky_data scrapes data at a given timestamp for a list
+            of icao24s.'''
             for t in timestamp_list:
                 api = OpenSkyApi('jplilly25', 'Crossfit25')
                 state = api.get_states(time_secs=t, icao24=icao24s)
@@ -135,7 +136,7 @@ class Airframe(object):
 
         # List of icao24s is converted to a dictionary (deals with case when
         #   length of list is greater than 500 elements)
-        icao24s = configure_icao24s(airframeDict[self.airframe]['icao24List'])
+        icao24s = configure_icao24s(icao24s)
 
         timestamp = self.timestamp
         flight_parameters = {'velocity':[], 'climb_rate':[], 'altitude':[]}
