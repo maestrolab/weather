@@ -1,8 +1,8 @@
 clc; clear; close all; echo off;
 %% Dataset Inputs
 yr = '2018';              %year
-mo = '06';                %month
-day = '18';               %Day
+mo = '12';                %month
+day = '21';               %Day
 hr = '1200';              %Valid values: '0000', '0600', '1200', '1800'
 
 min_lat = 13;
@@ -61,10 +61,10 @@ s.lon = lon(LON).';
 
 % Convert longitude from (0,360) to (-180, 180)
 s.lon(s.lon>180) = s.lon(s.lon>180) -360;
-[s.lon, s.lat] = meshgrid(s.lon,s.lat);
-Lon_flat = reshape(s.lon.',1,[]);
-Lat_flat = reshape(s.lat.',1,[]);
-s.latlon = [Lon_flat(:), Lat_flat(:)];
+[s.lon_grid, s.lat_grid] = meshgrid(s.lon,s.lat);
+Lon_flat = reshape(s.lon_grid.',1,[]);
+Lat_flat = reshape(s.lat_grid.',1,[]);
+s.lonlat = [Lon_flat(:), Lat_flat(:)];
 filename = strcat(yr, mo, day, '_', hr(1:2),'.mat');
 s=struct(s);
 save(filename,'s')

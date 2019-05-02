@@ -10,9 +10,7 @@ YEAR = '2014'
 MONTH = '01'
 DAY = '07'
 HOUR = '00'
-directory = '../../data/balloon_weather/'
-data = balloon_scraper(YEAR, MONTH, DAY, HOUR, directory)
-
-g = open("file.p", "wb")
-pickle.dump(data, g)
-g.close()
+directory = '../../data/weather/balloon/'
+locations = ['72249']  # Corresponds to Fort Worth/Dallas
+data = balloon_scraper(YEAR, MONTH, DAY, HOUR, directory, save=True,
+                       locations=locations)

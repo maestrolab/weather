@@ -105,10 +105,12 @@ venv.bak/
 
 # My edits
 examples/boom/sBOOM
-examples/data_processing/sBOOM
-examples/boom/panair_files
+*sBOOM*
+*panair_files*
+*nctoolbox*
 examples/scraping/*.csv
 examples/scraping/*.p
 data/noise/*/*00.p
 *.pyc
 *.geojson
+matlab/nctool-box-1.1.3

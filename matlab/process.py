@@ -3,6 +3,7 @@ from scipy.io import loadmat
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
+from weather.scraper.noaa import process
 year = '2018'
 month = '06'
 day = '18'
@@ -11,16 +12,8 @@ filename = year + month + day + '_' + hour + '.mat'
 
 index_altitude = 0
 #
-data = loadmat(filename, struct_as_record=False)['s'][0][0]
-data.height = data.height[0]
-data.temperature = data.temperature[0]
-data.wind_x = data.wind_x[0]
-data.wind_y = data.wind_y[0]
-data.humidity = data.humidity[0]
-data.pressure = data.pressure[0, 0]
-data.elevation = 10.**5/2.5577*(1-(data.pressure[:, :]/101325)**(1/5.2558))
-
-
+data = process(filename)
+print(data.lon.shape, data.lat.shape, data.humidity.shape)
 fig = plt.figure(figsize=(12, 6))
 from mpl_toolkits.basemap import Basemap
 # bounds = np.arange(0,110,10) - FIXME to match output
