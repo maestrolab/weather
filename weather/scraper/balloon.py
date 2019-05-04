@@ -8,6 +8,7 @@ import copy
 import math
 import csv
 import numpy as np
+from weather import convert_to_fahrenheit, windToXY, makeFloats
 
 
 def balloon_scraper(YEAR, MONTH, DAY, HOUR, directory='./', save=False,
@@ -56,12 +57,9 @@ def balloon_scraper(YEAR, MONTH, DAY, HOUR, directory='./', save=False,
         page = 'http://weather.uwyo.edu/cgi-bin/sounding?region=naconf&TYPE=TEXT%3ALIST&YEAR=' + \
             YEAR + '&MONTH=' + MONTH + '&FROM=' + FROM + '&TO=' + TO + \
             '&STNM=' + location
-        print(counter_x)
-        print('http://weather.uwyo.edu/cgi-bin/sounding?region=naconf&TYPE=TEXT%3ALIST&YEAR=' +
-              YEAR + '&MONTH=' + MONTH + '&FROM=' + FROM + '&TO=' + TO +
-              '&STNM=' + location)
+
+        # print(counter_x)
         page = requests.get(page)
-        page
         page.content
         soup = BeautifulSoup(page.content, 'html.parser')
         soup = soup.text.split('\n')
@@ -114,17 +112,245 @@ def balloon_scraper(YEAR, MONTH, DAY, HOUR, directory='./', save=False,
                         if soup[i][0] == ',':
                             soup[i] = soup[i][1:]
                     if soup[i].count(',') == 10:
-                        counter_filter += 1
-                        if counter_filter == 8:
-                            counter_filter = 0
-                        if counter_filter == 0:
-                            f.write(str(latitude) + ',' + str(longitude) +
-                                    ',' + soup[i]+'\n')
+                        # counter_filter += 1
+                        # if counter_filter == 8:
+                        #     counter_filter = 0
+                        # if counter_filter == 0:
+                        f.write(str(latitude) + ',' + str(longitude) +
+                                ',' + soup[i]+'\n')
 
     f.close()
 
-    if save:
-        g = open(directory + YEAR + MONTH + DAY + '_' + HOUR + ".p", "wb")
-        pickle.dump(all_data, g)
-        g.close()
     return all_data
+
+
+def process_data(all_data, altitude,
+                 directory='../data/weather/',
+                 outputs_of_interest=['temperature', 'height',
+                                      'humidity', 'wind_speed',
+                                      'wind_direction', 'pressure'],
+                 convert_celcius_to_fahrenheit=True):
+    ''' process_data makes a dictionary output that contains the lists
+    specified by the strings given in outputs_of_interest
+    '''
+    # Reading data for selected properties
+    if outputs_of_interest == 'all':
+        output = all_data
+    else:
+        output = {}
+
+        for key in outputs_of_interest:
+            output[key] = copy.deepcopy(all_data[key])
+
+    # Make everything floats
+    for key in outputs_of_interest:
+        output[key] = makeFloats(output[key])
+
+    # Convert temperature to fahrenheit
+    if convert_celcius_to_fahrenheit:
+        output['temperature'] = convert_to_fahrenheit(output['temperature'])
+
+    # Convert wind data
+    wind_x, wind_y = windToXY(output['wind_speed'],
+                              output['wind_direction'])
+    output['wind_x'] = wind_x
+    output['wind_y'] = wind_y
+    ground_altitude = output['height'][0]
+    output['height'] = [x - ground_altitude for x in output['height']]
+    output.pop('wind_speed', None)
+    output.pop('wind_direction', None)
+
+    # # Prepare for sBOOM
+    # data = {}
+    data = {}
+
+    data['temperature'] = np.array([output['height'],
+                                    output['temperature']]).T
+    data['humidity'] = np.array([output['height'],
+                                 output['humidity']]).T
+    data['wind'] = np.array([output['height'],
+                             output['wind_x'],
+                             output['wind_y']]).T
+    for key in data.keys():
+        data[key] = np.unique(data[key], axis=0).tolist()
+    #     lat = output['latitude']
+    #     lon = output['longitude']
+    #     height = output['height']
+    #     if key not in ['latitude', 'longitude', 'height']:
+    #         data, ground_altitudes = output_for_sBoom(output[key],
+    #                                                   key, altitude, lat,
+    #                                                   lon, height, data)
+    return [data['temperature'], data['wind'], data['humidity']], altitude - ground_altitude / 0.3048
+
+
+def output_for_sBoom(li, keyName, ALT, lat, lon, height, data):
+    '''output_for_sBoom takes a weather variable list, list keyName, and
+    a max altitude (ALT) as user defined inputs. It also requires the
+    existance of a dictionary data, and the lat, lon, and height lists
+    from the openPickle function. Using these, it makes a dictionary
+    with first key being a lat,lon point and second key being the
+    name of the weather variable.
+    '''
+    temp_height = []
+    temp_li = []
+    temp_combo_li = []
+    d = copy.deepcopy(data)
+    k = 0
+    i = 0
+    ground_level = 0
+    ground_altitudes = []
+    # ground_level = 0
+    # ground_altitudes = []
+    while i < len(lat):
+        if i > 0:
+            # appending to mini-list
+            if lat[i] == 0:
+                temp_height.append(height[i] - ground_level)
+                temp_li.append(li[i])
+                k += 1
+                i += 1
+            else:
+                # combining height and weather mini lists for storage
+                temp_combo_li = combineLatLon(temp_height, temp_li)
+
+                # making sure first two heights aren't the same
+                if temp_combo_li[0][0] == temp_combo_li[1][0]:
+                    temp_combo_li.pop(0)
+
+                # TEMPORARY TEST-forcing list to be a certain length
+                # while len(temp_combo_li) > 20:
+                    # temp_combo_li.pop()
+
+                # getting to next latlon value in big list if not already there
+                # while lat[i] == 0:
+                    # i += 1
+                    # k += 1
+
+                # key is location of previous latlon in big list
+                key = '%i, %i' % (lat[i-k], lon[i-k])
+
+                # appending mini-list to dictionary at latlon key
+                if d:
+                    data[key][keyName] = temp_combo_li
+                else:
+                    data[key] = {keyName: temp_combo_li}
+
+                # clearing mini-list and restarting
+                temp_height = []
+                temp_li = []
+                temp_combo_li = []
+                k = 0
+                temp_height.append(height[i])
+                ground_level = temp_height[0]
+                ground_altitudes.append(ALT - ground_level)
+                temp_height[0] = temp_height[0] - ground_level
+                temp_li.append(li[i])
+                k += 1
+                i += 1
+        # getting first element in big list
+        else:
+            temp_height.append(height[i])
+            ground_level = temp_height[0]
+
+            ground_altitudes = [ALT - ground_level]
+            temp_height[0] = temp_height[0] - ground_level
+            temp_li.append(li[i])
+            k += 1
+            i += 1
+
+    # getting data from final mini-list
+    temp_combo_li = combineLatLon(temp_height, temp_li)
+    # making sure first two heights aren't the same
+    if temp_combo_li[0][0] == temp_combo_li[1][0]:
+        temp_combo_li.pop(0)
+
+    # while len(temp_combo_li) > 20:
+        # temp_combo_li.pop()
+
+    # dictionary key
+    key = '%i, %i' % (lat[i-k], lon[i-k])
+
+    # making dictionary
+    if d:
+        data[key][keyName] = temp_combo_li
+    else:
+        data[key] = {keyName: temp_combo_li}
+
+    return data, ground_altitudes
+
+
+def combineLatLon(lat, lon):
+    '''combineLatLon takes a list of latitudes and a list of longitudes
+    that are the same length and combines them into a double list.
+    '''
+    w_latlon = []
+    for i in range(len(lat)):
+        w_latlon.append([lat[i], lon[i]])
+
+    return w_latlon
+
+
+def process_database(filename, variable_name='noise', transformation=None):
+    ''' Variable names = 'noise', 'temperature', 'wind_x', 'wind_y', 'pressure',
+        '''
+    noise_data = pickle.load(open(filename + '.p', 'rb'))
+
+    lat = []
+    lon = []
+    z = []
+    latlon = copy.deepcopy(list(noise_data.keys()))
+
+    for i in range(len(latlon)):
+        latlon_temp = [int(s) for s in latlon[i].split(',')]
+        lat.append(latlon_temp[0])
+        lon.append(latlon_temp[1])
+        z.append(noise_data[latlon[i]][variable_name])
+
+    # Make lists into arrays to graph
+    lon = np.array(lon)
+    lat = np.array(lat)
+    z = np.array(z)
+    if transformation is not None:
+        z = transformation(z)
+    return np.vstack([lon, lat, z]).T
+
+
+def appendToDictionary(latitude, longitude, all_data, soup):
+    ''' appendToDictionary appends the data scraped from twisterdata.com
+    to a dictionary for later use in this repository.
+    '''
+    all_data['latitude'].append(latitude)
+    all_data['longitude'].append(longitude)
+
+    prevLength = len(all_data['pressure'])
+
+    # Finding table data from accessed html file
+    table = soup.find("table", attrs={"class": "soundingTable"})
+    headings = [th.get_text() for th in table.find("tr").find_all("th")]
+    datasets = []
+    for row in table.find_all("tr")[1:]:
+        dataset = list(zip(headings, (td.get_text()
+                                      for td in row.find_all("td"))))
+        datasets.append(dataset)
+
+    # Adding each datapoint to dictionary
+    for i in range(len(datasets)):
+        for j in range(13):
+            tuple = datasets[i][j]
+            element = list(tuple)
+            if element[0] == 'PRES':
+                all_data['pressure'].append(float(element[1]))
+            elif element[0] == 'HGHT':
+                all_data['height'].append(float(element[1]))
+            elif element[0] == 'TEMP':
+                all_data['temperature'].append(float(element[1]))
+            elif element[0] == 'RELH':
+                all_data['humidity'].append(float(element[1]))
+            elif element[0] == 'DRCT':
+                all_data['wind_direction'].append(float(element[1]))
+            elif element[0] == 'SKNT':
+                all_data['wind_speed'].append(float(element[1]))
+
+    for i in range(len(all_data['pressure'])-1-prevLength):
+        all_data['latitude'].append('')
+        all_data['longitude'].append('')

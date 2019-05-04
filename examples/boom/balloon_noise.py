@@ -1,5 +1,6 @@
-from weather.scraper.balloon import balloon_scraper
-from weather.scraper.twister import process_data
+from weather.scraper.balloon import balloon_scraper, process_data
+from weather.filehandling import output_reader
+from weather.boom import boom_runner
 import pickle
 
 YEAR = '2018'
@@ -7,20 +8,29 @@ MONTH = '06'
 DAY = '18'
 HOUR = '00'
 altitude = 50000
-directory = '../../data/weather/balloon/'
+directory = './'
 locations = ['72249']  # Corresponds to Fort Worth/Dallas
-data = balloon_scraper(YEAR, MONTH, DAY, HOUR, directory, save=True,
-                       locations=locations)
-print(data)
-data, altitudes = process_data(DAY, MONTH, YEAR, HOUR, altitude,
-                               directory='../data/weather/',
-                               outputs_of_interest=['temperature', 'height',
-                                                    'humidity', 'wind_speed',
-                                                    'wind_direction', 'pressure',
-                                                    'latitude', 'longitude'],
-                               convert_celcius_to_fahrenheit=False,
-                               data=data)
+balloon_scraper(YEAR, MONTH, DAY, HOUR, directory, save=True,
+                locations=locations)
+data = output_reader('./WBData.csv', header=['latitude', 'longitude', 'pressure', 'height',
+                                             'temperature', 'dew_point',
+                                             'humidity', 'mixr',
+                                             'wind_direction',
+                                             'wind_speed',
+                                             'THTA', 'THTE', 'THTV'],
+                     separator=',')
 
-# all_data = {'latitude': [], 'longitude': [], 'pressure': [], 'height': [],
-#             'temperature': [], 'humidity': [], 'wind_direction': [],
-#             'wind_speed':
+sBoom_data, height_to_ground = process_data(data, altitude,
+                                            directory='../data/weather/',
+                                            outputs_of_interest=['temperature', 'height',
+                                                                 'humidity', 'wind_speed',
+                                                                 'wind_direction',
+                                                                 'latitude', 'longitude'],
+                                            convert_celcius_to_fahrenheit=False)
+
+[temperature, wind, humidity] = sBoom_data
+print(sBoom_data)
+noise = boom_runner(sBoom_data, height_to_ground,
+                    nearfield_file='../../data/nearfield/25D_M16_RL5.p')
+
+print(noise)

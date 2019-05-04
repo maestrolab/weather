@@ -25,6 +25,7 @@ def boom_runner(data, altitude_feet,
 
     # weather data
     [temperature, wind, humidity] = data
+
     # get pressure signature from pickle
     nearfield_sig = pickle.load(open(nearfield_file, "rb"))
 

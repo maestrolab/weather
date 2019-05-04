@@ -1,3 +1,0 @@
-1
-http://weather.uwyo.edu/cgi-bin/sounding?region=naconf&TYPE=TEXT%3ALIST&YEAR=2018&MONTH=06&FROM=1800&TO=1800&STNM=72249
-{'latitude': [], 'longitude': [], 'pressure': [], 'height': [], 'temperature': [], 'humidity': [], 'wind_direction': [], 'wind_speed': []}

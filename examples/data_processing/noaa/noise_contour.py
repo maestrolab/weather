@@ -6,8 +6,8 @@ import pickle
 
 from weather.scraper.noaa import process
 year = '2018'
-month = '06'
-day = '18'
+month = '12'
+day = '21'
 hour = '12'
 alt_ft = 50000
 directory = '../../../data/noise/'
@@ -28,10 +28,10 @@ m.drawcountries(linewidth=1.0)
 m.drawcoastlines()
 
 plt.contourf(map_lon, map_lat, np.array(data.noise).reshape(data.lon_grid.shape),
-             cmap=cm.coolwarm)
+             cmap=cm.coolwarm, levels=[76, 78, 80, 82, 82.0001, 84, 86, 88])  # np.arange(76, 88, 1.))
 
 cbar = m.colorbar()
 degree_sign = '\N{DEGREE SIGN}'
-label = "Relative Humidity"
+label = "Perceived level in dB (PLdB)"
 cbar.set_label(label)
 plt.show()
