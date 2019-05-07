@@ -28,7 +28,7 @@ m.drawcountries(linewidth=1.0)
 m.drawcoastlines()
 
 plt.contourf(map_lon, map_lat, np.array(data.noise).reshape(data.lon_grid.shape),
-             cmap=cm.coolwarm, levels=[76, 78, 80, 82, 82.0001, 84, 86, 88])  # np.arange(76, 88, 1.))
+             cmap=cm.coolwarm, levels=np.linspace(75, 87, 7))
 
 cbar = m.colorbar()
 degree_sign = '\N{DEGREE SIGN}'

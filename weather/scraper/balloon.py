@@ -12,7 +12,7 @@ from weather import convert_to_fahrenheit, windToXY, makeFloats
 
 
 def balloon_scraper(YEAR, MONTH, DAY, HOUR, directory='./', save=False,
-                    locations=None):
+                    locations=None, filename='database.csv'):
 
     FROM = DAY + HOUR
     TO = DAY + HOUR
@@ -44,7 +44,7 @@ def balloon_scraper(YEAR, MONTH, DAY, HOUR, directory='./', save=False,
                      '78807', '78897', '78954', '78970', '91285', '80222',
                      '82022', '91165', '91285']
 
-    f = open(directory+'WBData.csv', 'w')
+    f = open(directory+filename, 'w')
     counter_x = 0
     counter_filter = 0
 
