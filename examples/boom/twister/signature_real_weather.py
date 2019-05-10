@@ -5,7 +5,7 @@ from weather.scraper.twister import process_data
 day = '18'
 month = '06'
 year = '2018'
-hour = '12'
+hour = '12_'
 lat = 32
 lon = -100
 alt_ft = 45000.
@@ -23,7 +23,6 @@ index = list(data.keys()).index(key)
 height_to_ground = altitudes[index] / 0.3048  # In feet
 sBoom_data = prepare_weather_sBoom(data, index)
 [temperature, wind, humidity] = sBoom_data
-print(temperature)
 noise = boom_runner(sBoom_data, height_to_ground)
 
 print(noise)

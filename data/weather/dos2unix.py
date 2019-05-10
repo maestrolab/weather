@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 convert dos linefeeds (crlf) to unix (lf)
-usage: dos2unix.py 
+usage: dos2unix.py
 """
 original = "2018_06_18_12.p"
 destination = "2018_06_18_12_.p"
@@ -15,4 +15,4 @@ with open(destination, 'wb') as output:
         outsize += len(line) + 1
         output.write(line + str.encode('\n'))
 
-print("Done. Saved %s bytes." % (len(content)-outsize))
+print("Done. Saved %s by    tes." % (len(content)-outsize))
