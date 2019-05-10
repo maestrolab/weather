@@ -76,12 +76,16 @@ else:
 
 # Run
 if run_method == 'panair':
-	axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE, altitude=alt_ft)
+	axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE,
+                    altitude=height_to_ground,
+                    weather=weather_data)
 	axiebump.MESH_COARSEN_TOL = 0.00045
 	axiebump.N_TANGENTIAL = 20
 	loudness = axiebump.run(bump_inputs)
 elif run_method == 'EquivArea':
-	axiebump = EquivArea(CASE_DIR, SBOOM_EXE, altitude=alt_ft)
+	axiebump = EquivArea(CASE_DIR, SBOOM_EXE,
+                    altitude=height_to_ground,
+                    weather=weather_data)
 	loudness = axiebump.run(bump_inputs)
 else:
 	raise RuntimeError("evaluation method not recognized")
