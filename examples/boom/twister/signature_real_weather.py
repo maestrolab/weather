@@ -5,7 +5,7 @@ from weather.scraper.twister import process_data
 day = '18'
 month = '06'
 year = '2018'
-hour = '12_'
+hour = '12'
 lat = 32
 lon = -100
 alt_ft = 45000.
