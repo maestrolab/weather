@@ -5,9 +5,9 @@ import platform
 
 
 run_method = 'EquivArea'
-
+deformation = 'cubic'
 # Bump design variables
-bump_inputs = read_input('axie_bump_inputs.txt')
+bump_inputs = read_input('axie_bump_inputs.txt', n=5)
 
 # Flight conditions inputs
 #day = '18'
@@ -78,14 +78,16 @@ else:
 if run_method == 'panair':
 	axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE,
                     altitude=height_to_ground,
-                    weather=weather_data)
+                    weather=weather_data,
+                    deformation=deformation)
 	axiebump.MESH_COARSEN_TOL = 0.00045
 	axiebump.N_TANGENTIAL = 20
 	loudness = axiebump.run(bump_inputs)
 elif run_method == 'EquivArea':
 	axiebump = EquivArea(CASE_DIR, SBOOM_EXE,
                     altitude=height_to_ground,
-                    weather=weather_data)
+                    weather=weather_data,
+                    deformation=deformation)
 	loudness = axiebump.run(bump_inputs)
 else:
 	raise RuntimeError("evaluation method not recognized")
