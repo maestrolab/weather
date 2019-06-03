@@ -44,7 +44,6 @@ for altitude in altitudes:
     properties_at_altitude = []
     for i in range(len(data['noise'])):
         alt, property = np.array(data['humidity'][i]).T
-        print(altitude, min(alt), max(alt))
         f = interp1d(alt, property)
         properties_at_altitude.append(f(altitude))
     properties_av.append(np.average(properties_at_altitude))
@@ -93,7 +92,7 @@ def setBoxColors(bp, color):
 
 
 fig, ax = plt.subplots(1, 1)
-print(len(data_per_month))
+
 bp1 = plt.boxplot(data_per_month, positions=np.array(
     range(len(data_per_month)))*2.0-0.4, showfliers=False)
 bp2 = plt.boxplot(data_per_month, positions=np.array(

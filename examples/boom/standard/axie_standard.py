@@ -7,7 +7,7 @@ import platform
 height = 0.  # meters
 length_down_body = 20  # meters
 width = 6  # meters
-bump_inputs = [height, length_down_body, width]
+bump_inputs = [12.5, .01, .1, .5, .5] # x, y, m, w0, w1
 
 # Flight conditions inputs
 alt_ft = 50000.
@@ -29,7 +29,7 @@ else:
 
 # Run
 # axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE) # for standard atmosphere
-axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE, altitude=alt_ft)
+axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE, altitude=alt_ft, deformation='cubic')
 axiebump.MESH_COARSEN_TOL = 0.00045
 axiebump.N_TANGENTIAL = 20
 loudness = axiebump.run(bump_inputs)

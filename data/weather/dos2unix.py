@@ -3,8 +3,8 @@
 convert dos linefeeds (crlf) to unix (lf)
 usage: dos2unix.py
 """
-original = "2018_06_18_12.p"
-destination = "2018_06_18_12_.p"
+original = "./twister/2018_06_18_12.p"
+destination = "./twister/2018_06_18_12_.p"
 
 content = ''
 outsize = 0

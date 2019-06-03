@@ -77,7 +77,7 @@ def prepare_weather_sBoom(data, j):
     return(temperature, wind, humidity)
 
 
-def read_input(filename):
+def read_input(filename, n=3):
     # Read inputs from a file
     f = open(filename, 'r')
     line = f.read()
@@ -92,11 +92,8 @@ def read_input(filename):
     nBumps = inputs[0]  # this input will denote the number of bumps
     bump_inputs = []  # initialize
     if nBumps >= 1:
-        for i in range(1, int(nBumps*3+1), 3):
-            height = inputs[i]
-            length_down_body = inputs[i+1]
-            width = inputs[i+2]
-            bump = [height, length_down_body, width]
+        for i in range(1, int(nBumps*n+1), n):
+            bump = inputs[i:i+n]
             bump_inputs.append(bump)
     else:
         raise RuntimeError(
