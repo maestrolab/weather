@@ -1,6 +1,7 @@
 import pickle
 import numpy as np
 from weather.boom import boom_runner
+from scipy.integrate import simps
 
 def package_data(data1, data2=None, method='unpack'):
     '''package_data packs or unpacks data in the form [[data1, data2]]'''
@@ -12,8 +13,6 @@ def package_data(data1, data2=None, method='unpack'):
         unpacked_data_2 = [d[1] for d in data1]
         return unpacked_data_1, unpacked_data_2
 
-# Probably should save standard_profiles in current directory instead of
-#   preparing them everytime this script is run.
 def prepare_standard_profiles(cruise_altitude=13000, standard_profiles_path=
 './../../../data/weather/standard_profiles/standard_profiles.p'):
        '''prepare_standard_profiles loads the standard profile data and organizes
@@ -64,7 +63,7 @@ def prepare_standard_profiles(cruise_altitude=13000, standard_profiles_path=
 
        return sBoom_data
 
-class deformation:
+class Deformation:
     '''Create a deformation to add to humidity profiles.
 
         Inputs:
@@ -78,7 +77,7 @@ class deformation:
         self.height = height
         self.peak = peak
 
-class deformed_profile:
+class DeformedProfile:
     '''Create and deform relative humidity profiles.
 
         Inputs:
@@ -86,12 +85,15 @@ class deformed_profile:
                              atmosphere [altitude, relative humidity [%]]
          - temperature_profile: temperature profile from ground up through
                                 atmosphere [altitude, temperature [C]]
+         - profile_type: desired profile type for DOE study (determines what
+                         profiles to perform the DOE on)
     '''
 
-    def __init__(self, humidity_profile, temperature_profile):
+    def __init__(self, humidity_profile, temperature_profile, profile_type):
         self.altitudes, self.relative_humidities = package_data(humidity_profile)
         self.altitudes, self.temperatures = package_data(temperature_profile)
         self._calculate_vapor_pressures(self.relative_humidities, self.temperatures)
+        self.profile_type = profile_type
 
     def _calculate_vapor_pressures(self, humidity_profile, temperature_profile):
        '''_calculate_vapor_pressures calculates the saturation_vapor_pressures
@@ -110,12 +112,6 @@ class deformed_profile:
                                      self.saturation_vapor_pressures[i] for i in
                                      range(len(humidity_profile))]
 
-    def _trapezoidal_area(self, x, y):
-        """Compute the Riemann Sum using trapezoids."""
-        areas = [(y[i-1]+y[i])*(x[i]-x[i-1])/2 for i in range(1, len(x))]
-        total_area = sum(areas)
-        return total_area
-
     def _calculate_humidity_profile(self, vapor_pressures):
         '''_calculate_humidity_profile calculates the relative humidity values
         for all vapor pressure values in vapor_pressures'''
@@ -125,37 +121,15 @@ class deformed_profile:
 
         return relative_humidity_profile
 
-    def _filter_vapor_pressures(self, actual_vapor_pressures):
-        '''_filter_vapor_pressures makes sure that the actual_vapor_pressures
-        do not fall out of range of the saturation_vapor_pressures'''
-        for i in range(len(actual_vapor_pressures)):
-            if actual_vapor_pressures[i] > self.saturation_vapor_pressures[i]:
-                actual_vapor_pressures[i] = self.saturation_vapor_pressures[i]
-            elif actual_vapor_pressures[i] < 0:
-                actual_vapor_pressures[i] = 0
-
-        return actual_vapor_pressures
-
-    def _filter_relative_humidities(self, relative_humidities):
-        '''_filter_relative_humidities makes sure that the relative_humidities
-        do not fall out of range (0% to 100%)'''
-        for i in range(len(relative_humidities)):
-            if relative_humidities[i] < 0:
-                relative_humidities[i] = 0
-            elif relative_humidities[i] > 100:
-                relative_humidities[i] = 100
-
-        return relative_humidities
-
     def create_spike(self, base, height, peak):
-        self.deformation = deformation(base=base, height=height, peak=peak)
+        self.deformation = Deformation(base=base, height=height, peak=peak)
 
-    def add_spike(self, profile_type='vapor_pressures'):
+    def add_spike(self):
         '''add_spike adds a spike to an inputted humidity profile without
         changing the integral of the humidity profile'''
-        if profile_type == 'vapor_pressures':
+        if self.profile_type == 'vapor_pressures':
             spiked_profile = self.actual_vapor_pressures[:]
-        else:
+        elif self.profile_type == 'relative_humidities':
             spiked_profile = self.relative_humidities[:]
 
         # Add spike to profile
@@ -176,65 +150,99 @@ class deformed_profile:
                                       self.altitudes[i]+\
                                       self.deformation.base/2)
 
-        if profile_type == 'vapor_pressures':
-            self.spiked_vapor_profile = \
-                               self._filter_vapor_pressures(spiked_profile)
-            self.spiked_rh_profile = self._calculate_humidity_profile(
-                                                        self.spiked_vapor_profile)
-        elif profile_type == 'relative_humidities':
-            self.spiked_rh_profile = \
-                                self._filter_relative_humidities(spiked_profile)
+        if self.profile_type == 'vapor_pressures':
+            self.spiked_vapor_profile = spiked_profile
+            self.spiked_rh_profile = self._calculate_humidity_profile(spiked_profile)
+        elif self.profile_type == 'relative_humidities':
+            self.spiked_rh_profile = spiked_profile
 
-    def change_average(self, multiplier=1, profile_type='vapor_pressures'):
+    def change_average(self, multiplier=1):
         '''change_average multiplies the inputted humidity_profile by a constant
         multiplier'''
-        if profile_type == 'vapor_pressures':
-            original_profile = self.actual_vapor_pressures
+        if self.profile_type == 'vapor_pressures':
+            original_profile = self.actual_vapor_pressures[:]
             spiked_profile = self.spiked_vapor_profile[:]
-        else:
-            original_profile = self.relative_humidities
+        elif self.profile_type == 'relative_humidities':
+            original_profile = self.relative_humidities[:]
             spiked_profile = self.spiked_rh_profile[:]
 
-        # Area of original and spiked profiles (vapor pressure profiles)
-        self.original_area = self._trapezoidal_area(self.altitudes, original_profile)
-        self.spiked_area = self._trapezoidal_area(self.altitudes, spiked_profile)
+        # Area of original and spiked profiles
+        self.original_area = simps(original_profile, self.altitudes)
+        self.spiked_area = simps(spiked_profile, self.altitudes)
 
         # Correction factor for area added by spike deformation
         self._correction_factor = self.original_area/self.spiked_area
 
         # Create scaled humidity profile
-        if profile_type == 'vapor_pressures':
-            scaled_vapor_profile = [self.spiked_vapor_profile[i]*multiplier*
-                                    self._correction_factor for i in
-                                    range(len(self.spiked_vapor_profile))]
-            scaled_vapor_profile = self._filter_vapor_pressures(scaled_vapor_profile)
+        if self.profile_type == 'vapor_pressures':
+            self.scaled_vapor_profile = [self.spiked_vapor_profile[i]*multiplier*
+                                         self._correction_factor for i in
+                                         range(len(self.spiked_vapor_profile))]
+            self.scaled_rh_profile = self._calculate_humidity_profile(self.scaled_vapor_profile)
+        elif self.profile_type == 'relative_humidities':
+            self.scaled_rh_profile = [self.spiked_rh_profile[i]*multiplier*
+                                      self._correction_factor for i in range(
+                                      len(self.spiked_rh_profile))]
+            # Modify calculate vapor pressure function to use here
+            self.scaled_vapor_profile = [self.scaled_rh_profile[i]/100*
+                                         self.saturation_vapor_pressures[i] for i in
+                                         range(len(self.scaled_rh_profile))]
 
-            self.scaled_rh_profile = self._calculate_humidity_profile(scaled_vapor_profile)
-        elif profile_type == 'relative_humidities':
-            scaled_rh_profile = [self.spiked_rh_profile[i]*multiplier*
-                                 self._correction_factor for i in range(
-                                 len(self.spiked_rh_profile))]
-            self.scaled_rh_profile = self._filter_relative_humidities(scaled_rh_profile)
+    def filter_profile(self, filter_limit=1000, err=0.0001):
+        '''filter_profile filters the vapor pressure profile to ensure that each
+        point does not exceed the saturation vapor pressure'''
+        actual_vapor_pressures = self.scaled_vapor_profile[:]
+
+        # The profile is bounded by the saturation vapor pressures
+        out_of_bounds = True
+        runs = 0
+        while out_of_bounds and runs < filter_limit:
+            original_area = simps(actual_vapor_pressures, self.altitudes)
+            out_of_bounds = False
+            for i in range(len(actual_vapor_pressures)):
+                if actual_vapor_pressures[i] > self.saturation_vapor_pressures[i]:
+                    diff = abs(actual_vapor_pressures[i]-
+                               self.saturation_vapor_pressures[i])
+                    actual_vapor_pressures[i] = self.saturation_vapor_pressures[i]
+                    if diff > err:
+                        out_of_bounds = True
+                elif actual_vapor_pressures[i] < 0:
+                    actual_vapor_pressures[i] = 0
+                    out_of_bounds = True
+            filtered_area = simps(actual_vapor_pressures, self.altitudes)
+
+            # Correct for the filtered out area
+            filtered_correction_factor = original_area/filtered_area
+            actual_vapor_pressures = [actual_vapor_pressures[i]*\
+                                      filtered_correction_factor for i in
+                                      range(len(actual_vapor_pressures))]
+            runs += 1
+            print(runs)
+
+        self.filtered_vapor_profile = actual_vapor_pressures
+        self.filtered_rh_profile = self._calculate_humidity_profile(
+                                                    self.filtered_vapor_profile)
 
 ################################################################################
 from optimization_tools.DOE import DOE
 import time
 import pickle
 
-# Prepare sBoom_data for humidity_profile_DOE
+# Prepare sBoom_data for humidity_profile_DOE and initialize profile types
 sBoom_data = prepare_standard_profiles()
+profile_type = ['vapor_pressures','relative_humidities']
 
 def humidity_profile_DOE(inputs):
-    profile_deformed = deformed_profile(inputs['sBoom']['profiles'][2],
-                                        inputs['sBoom']['profiles'][0])
+    profile_deformed = DeformedProfile(inputs['sBoom']['profiles'][2],
+                                        inputs['sBoom']['profiles'][0],
+                                        profile_type=inputs['profile_type'])
     profile_deformed.create_spike(base=inputs['base'], height=inputs['height'],
                                     peak=inputs['peak'])
-    profile_deformed.add_spike(profile_type='vapor_pressures')
-    profile_deformed.change_average(multiplier=inputs['amount_of_vapor'],
-                                    profile_type='vapor_pressures')
-
+    profile_deformed.add_spike()
+    profile_deformed.change_average(multiplier=inputs['amount_of_vapor'])
+    profile_deformed.filter_profile(filter_limit=100000, err=0.00001)
     final_profile = package_data(profile_deformed.altitudes,
-                                 profile_deformed.scaled_rh_profile,
+                                 profile_deformed.filtered_rh_profile,
                                  method='pack')
     updated_sBoom = {'profiles':inputs['sBoom']['profiles'][:2]+[final_profile],
                      'height_to_ground':inputs['sBoom']['height_to_ground']}
@@ -244,15 +252,16 @@ def humidity_profile_DOE(inputs):
     return {'noise':noise}
 
 # Define points
-problem = DOE(levels=2, driver='Full Factorial')
+problem = DOE(levels=4, driver='Full Factorial')
 problem.add_variable('amount_of_vapor', lower=0.9, upper=1.1, type=float) # [%]
 problem.add_variable('base', lower=100, upper=3000, type=float) # [m]
-problem.add_variable('height', lower=2, upper=12, type=float) # [kPa]
-problem.add_variable('peak', lower=0, upper=5000, type=float) # [m]
+problem.add_variable('height', lower=2, upper=90, type=float) # [kPa]
+problem.add_variable('peak', lower=1000, upper=9000, type=float) # [m]
 problem.define_points()
 
 # Run for a function with dictionary as inputs
-problem.run(humidity_profile_DOE, cte_input={'sBoom': sBoom_data})
+problem.run(humidity_profile_DOE, cte_input={'sBoom': sBoom_data,
+                                             'profile_type':profile_type[1]})
 problem.find_influences(not_zero=True)
 problem.find_nadir_utopic(not_zero=True)
 print('Nadir: ', problem.nadir)
@@ -260,10 +269,10 @@ print('Utopic: ', problem.utopic)
 
 # Plot factor effects
 problem.plot(xlabel=['amount_of_vapor', 'base', 'height', 'peak'],
-             ylabel=['PLdB'], number_y=2)
+             ylabel=['PLdB'], number_y=1)
 
 # Store DOE
-# date = 'test_0_20190510'
-# fileObject = open('humidity_DOE/DOE_FullFactorial_'+date, 'wb')
-# pickle.dump(problem, fileObject)
-# fileObject.close()
+date = 'rh_4_levels_20190510'
+fileObject = open('humidity_DOE/peak_not_0/DOE_FullFactorial_'+date, 'wb')
+pickle.dump(problem, fileObject)
+fileObject.close()

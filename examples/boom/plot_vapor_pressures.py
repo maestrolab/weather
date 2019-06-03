@@ -16,18 +16,34 @@ def package_data(data1, data2=None, method='unpack'):
         return unpacked_data_1, unpacked_data_2
 
 def calculate_vapor_pressures(humidities, temperatures):
-   '''calculate_vapor_pressures calculates the saturation_vapor_pressures
-   and the actual_vapor_pressures given a temperature and humidity
-   profile (equations from Arden Buck (1981))
-   '''
-   saturation_vps = []
-   for t in temperatures:
+    '''calculate_vapor_pressures calculates the saturation_vapor_pressures
+    and the actual_vapor_pressures given a temperature and humidity
+    profile (equations from Arden Buck (1981))
+    '''
+    saturation_vps = []
+    for t in temperatures:
        if t>=0:
            saturation_vps.append(0.61121*np.exp((18.678-(t/234.5))*(t/(257.14+t))))
        else:
            saturation_vps.append(0.61115*np.exp((23.036-(t/333.7))*(t/(279.82+t))))
-   actual_vps = [humidities[i]/100*saturation_vps[i] for i in range(len(humidities))]
-   return actual_vps
+    actual_vps = [humidities[i]/100*saturation_vps[i] for i in range(len(humidities))]
+    return actual_vps
+
+def prepare_vapor_pressures(humidity_profiles, temperature_profiles):
+    '''prepare_vapor_pressures calculates the vapor pressure profile for a set
+    of humidity profiles
+    '''
+    vapor_pressure_profiles = []
+    for i in range(len(temperature_profiles)):
+        temps = temperature_profiles[i]
+        rhs = humidity_profiles[i]
+        altitudes, relative_humidities = package_data(rhs)
+        altitudes_, temperatures = package_data(temps)
+        vapor_pressures = calculate_vapor_pressures(relative_humidities, temperatures)
+        vapor_pressure_profile = package_data(altitudes, vapor_pressures, method='pack')
+        vapor_pressure_profiles.append(vapor_pressure_profile)
+
+    return vapor_pressure_profiles
 
 YEAR = '2018'
 MONTH = '06'
@@ -41,16 +57,8 @@ f = open(locations[0] + '.p', 'rb')
 data = pickle.load(f)
 f.close()
 
-# Prepare vapor pressure values
-data['vapor_pressures'] = [0 for i in range(len(data['temperature']))]
-for i in range(len(data['temperature'])):
-    temps = data['temperature'][i]
-    rhs = data['humidity'][i]
-    altitudes, relative_humidities = package_data(rhs)
-    altitudes_, temperatures = package_data(temps)
-    vapor_pressures = calculate_vapor_pressures(relative_humidities, temperatures)
-    vapor_pressure = package_data(altitudes, vapor_pressures, method='pack')
-    data['vapor_pressures'][i] = vapor_pressure
+data['vapor_pressures'] = prepare_vapor_pressures(data['humidity'],
+                                                  data['temperature'])
 
 plt.figure()
 for i in range(len(np.array(data['noise']))):
@@ -58,4 +66,5 @@ for i in range(len(np.array(data['noise']))):
     plt.plot(property, alt, 'k', alpha=0.05)
 plt.ylabel('Altitude (m)')
 plt.xlabel('Vapor Pressure (kPa)')
+
 plt.show()
