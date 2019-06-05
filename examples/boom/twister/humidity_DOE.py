@@ -17,41 +17,13 @@ def prepare_standard_profiles(cruise_altitude=13000, standard_profiles_path=
 './../../../data/weather/standard_profiles/standard_profiles.p'):
        '''prepare_standard_profiles loads the standard profile data and organizes
        sBoom_data to be inputted into the humidity_profile_DOE'''
-       def interpolate_temperature(temperature_altitudes, temperature_profile,
-                                   reference_altitudes, reference_profile):
-           '''interpolate_temperature creates a temperature profile that is made up
-           of [atltidue, temperature] pairs at the altitudes contained within the
-           reference_profile'''
-           def find_indeces(point, data_set):
-               '''find_indeces finds the bounding indices of data_set that include
-               the point'''
-               for i in range(len(data_set)):
-                   if point > data_set[i]:
-                       i1 = i
-                       i2 = i+1
-
-               return i1, i2
-
-           interpolated_temperature_profile = [temperature_profile[1]]
-           for ref_alt in reference_altitudes[1:]:
-               i1, i2 = find_indeces(ref_alt, temperature_altitudes)
-               x = temperature_altitudes[i1:i2+1]
-               y = temperature_profile[i1:i2+1]
-               x0 = ref_alt
-               interpolated_temperature = np.interp(x0,x,y)
-               interpolated_temperature_profile.append(interpolated_temperature)
-
-           return reference_altitudes, interpolated_temperature_profile
-
        standard_profiles = pickle.load(open(standard_profiles_path,'rb'))
 
        # Interpolate temperature values at altitudes in relative humidity profile
        temperature_altitudes, temperatures = package_data(standard_profiles['temperature'])
        rh_altitudes, rhs = package_data(standard_profiles['relative humidity'])
 
-       temperature_altitudes, temperatures = interpolate_temperature(
-                                                temperature_altitudes, temperatures,
-                                                rh_altitudes, rhs)
+       temperatures = np.interp(rh_altitudes, temperature_altitudes, temperatures)
 
        standard_profiles['temperature'] = package_data(temperature_altitudes,
                                                         temperatures, method='pack')

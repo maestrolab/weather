@@ -2,8 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 
-from scipy.interpolate import interp1d
-
 # Both functions included as they have not been added to weather library tools
 def package_data(data1, data2=None, method='unpack'):
     '''package_data packs or unpacks data in the form [[data1, data2]]'''
@@ -14,6 +12,12 @@ def package_data(data1, data2=None, method='unpack'):
         unpacked_data_1 = [d[0] for d in data1]
         unpacked_data_2 = [d[1] for d in data1]
         return unpacked_data_1, unpacked_data_2
+
+def convert_to_celcius(temperature_F):
+    if type(temperature_F) == list:
+        temperature_F = np.array(temperature_F)
+    temperature_C = (5/9)*(temperature_F-32)
+    return temperature_C
 
 def calculate_vapor_pressures(humidities, temperatures):
     '''calculate_vapor_pressures calculates the saturation_vapor_pressures
@@ -56,6 +60,11 @@ locations = ['72469']  # Corresponds to Fort Worth/Dallas
 f = open(locations[0] + '.p', 'rb')
 data = pickle.load(f)
 f.close()
+
+for i in range(len(data['temperature'])):
+    alts, temps = package_data(data['temperature'][i])
+    temps_c = convert_to_celcius(temps)
+    data['temperature'][i] = package_data(alts, list(temps_c), method='pack')
 
 data['vapor_pressures'] = prepare_vapor_pressures(data['humidity'],
                                                   data['temperature'])
