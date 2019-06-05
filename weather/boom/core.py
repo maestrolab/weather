@@ -88,21 +88,22 @@ def read_input(filename):
     inputs = []
     for i in range(len(line)-1):
         inputs.append(float(line[i]))
-	
-	# Unpack and define/redefine some values
+
+    # Unpack and define/redefine some values
     nBumps = inputs[0]  # this input will denote the number of bumps
-    deformation_flag = inputs[1] # this will denote the type of deformation
-    if deformation_flag==1: # Gaussian bump
-        n=3
-        deformation='gaussian'
-    elif deformation_flag==2: # cubic spline bump
-        n=5
-        deformation='cubic'
+    deformation_flag = inputs[1]  # this will denote the type of deformation
+    print(deformation_flag)
+    if deformation_flag == 1:  # Gaussian bump
+        n = 3
+        deformation = 'gaussian'
+    elif deformation_flag == 2:  # cubic spline bump
+        n = 5
+        deformation = 'cubic'
     run_method_flag = inputs[2]
-    if run_method_flag==1:
-        run_method='panair'
-    elif run_method_flag==2:
-        run_method='EquivArea'
+    if run_method_flag == 1:
+        run_method = 'panair'
+    elif run_method_flag == 2:
+        run_method = 'EquivArea'
 
     bump_inputs = []  # initialize
     if nBumps >= 1:
