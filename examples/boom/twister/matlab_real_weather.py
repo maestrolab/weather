@@ -4,10 +4,10 @@ from weather.scraper.twister import process_data
 import platform
 
 
-run_method = 'EquivArea'
-deformation = 'cubic'
+# run_method = 'EquivArea'
+# deformation = 'cubic'
 # Bump design variables
-bump_inputs = read_input('axie_bump_inputs.txt', n=5)
+deformation, run_method, bump_inputs = read_input('axie_bump_inputs.txt')
 
 # Flight conditions inputs
 #day = '18'
@@ -61,8 +61,8 @@ index = list(data.keys()).index(key)
 height_to_ground = altitudes[index] / 0.3048
 
 CASE_DIR = "./"  # axie bump case
-PANAIR_EXE = 'panair.exe'  # name of the panair executable
-SBOOM_EXE = 'sboom_windows.dat.allow.exe'  # name of the sboom executable
+#PANAIR_EXE = 'panair.exe'  # name of the panair executable
+#SBOOM_EXE = 'sboom_windows.dat.allow'  # name of the sboom executable
 
 print(platform.system())
 if platform.system() == 'Linux' or platform.system() == 'Darwin':

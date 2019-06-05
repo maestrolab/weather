@@ -77,7 +77,7 @@ def prepare_weather_sBoom(data, j):
     return(temperature, wind, humidity)
 
 
-def read_input(filename, n=3):
+def read_input(filename):
     # Read inputs from a file
     f = open(filename, 'r')
     line = f.read()
@@ -88,14 +88,28 @@ def read_input(filename, n=3):
     inputs = []
     for i in range(len(line)-1):
         inputs.append(float(line[i]))
-
+	
+	# Unpack and define/redefine some values
     nBumps = inputs[0]  # this input will denote the number of bumps
+    deformation_flag = inputs[1] # this will denote the type of deformation
+    if deformation_flag==1: # Gaussian bump
+        n=3
+        deformation='gaussian'
+    elif deformation_flag==2: # cubic spline bump
+        n=5
+        deformation='cubic'
+    run_method_flag = inputs[2]
+    if run_method_flag==1:
+        run_method='panair'
+    elif run_method_flag==2:
+        run_method='EquivArea'
+
     bump_inputs = []  # initialize
     if nBumps >= 1:
-        for i in range(1, int(nBumps*n+1), n):
+        for i in range(3, int(nBumps*n+3), n):
             bump = inputs[i:i+n]
             bump_inputs.append(bump)
     else:
         raise RuntimeError(
             "The first input (denoting the number of bumps) must be an integer greater than or equal to 1")
-    return bump_inputs
+    return (deformation, run_method, bump_inputs)
