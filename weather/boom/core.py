@@ -30,7 +30,7 @@ def boom_runner(data, altitude_feet,
     nearfield_sig = pickle.load(open(nearfield_file, "rb"))
 
     # initialize sBOOM
-    sboom = SboomWrapper(CASE_DIR, exe="sboom_windows.dat.allow")
+    sboom = SboomWrapper(CASE_DIR, exe="sboom_windows.dat.allow.exe")
 
     # change mach_number for each iteration based on wind
     mach = MACH  # MachModifier(DIRECTION, MACH, ALT, wind)
@@ -88,7 +88,7 @@ def read_input(filename):
     inputs = []
     for i in range(len(line)-1):
         inputs.append(float(line[i]))
-	
+
 	# Unpack and define/redefine some values
     nBumps = inputs[0]  # this input will denote the number of bumps
     deformation_flag = inputs[1] # this will denote the type of deformation

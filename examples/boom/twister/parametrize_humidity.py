@@ -1,105 +1,93 @@
-################################################################################
-# HermiteSpline was written by Pedro leal
-# Original file: spline_class.py (copied from there)
-"""Tools for creating parametric surface descriptions and meshes."""
-import numpy as np
-class HermiteSpline:
-    """  """
-
-    def __init__(self, p0=0., p1=0, m0=1., m1=-.2, a=0.5, b=1.0):
-        self._p0 = p0
-        self._p1 = p1
-        self._m0 = m0
-        self._m1 = m1
-        self._a = a
-        self._b = b
-
-    def __call__(self, parameter):
-        p0 = self._p0
-        p1 = self._p1
-        m0 = self._m0
-        m1 = self._m1
-
-        dx = self._b - self._a
-
-        output = np.zeros(parameter.shape)
-        indexes = np.where((parameter >= self._a) & (parameter <= self._b))
-        t = np.linspace(0, 1, len(indexes[0]))
-        h00 = 2*t**3 - 3*t**2 + 1
-        h10 = t**3 - 2*t**2 + t
-        h01 = -2*t**3 + 3*t**2
-        h11 = t**3 - t**2
-        output[indexes] = h00*p0 + h10*dx*m0 + h01*p1 + h11*dx*m1
-        return output
-################################################################################
-def package_data(data1, data2=None, method='unpack'):
-    '''package_data packs or unpacks data in the form [[data1, data2]]'''
-    if method == 'pack':
-        packed_data = [[data1[i],data2[i]] for i in range(len(data1))]
-        return packed_data
-    elif method == 'unpack':
-        unpacked_data_1 = [d[0] for d in data1]
-        unpacked_data_2 = [d[1] for d in data1]
-        return unpacked_data_1, unpacked_data_2
-
-def convert_to_celcius(temperature_F):
-    if type(temperature_F) == list:
-        temperature_F = np.array(temperature_F)
-    temperature_C = (5/9)*(temperature_F-32)
-    return temperature_C
-
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
-# from 'some_directory' import HermiteSpline
+from examples.boom.twister.misc_humidity import HermiteSpline, SplineBumpHumidity
 
 class ParametrizeHumidity:
 
-    def __init__(self, altitudes, relative_humidities, temperatures, cruise_altitude):
+    def __init__(self, altitudes, relative_humidities, temperatures,
+                 pressures, bounds, parametrize_altitudes = np.array([]),
+                 geometry_type = 'spline'):
         self.alts = altitudes
         self.rhs = relative_humidities
         self.temps = temperatures
+        self.pressures = pressures
         self._calculate_vapor_pressures()
-        self.cruise_altitude = cruise_altitude
+        self.geometry_type = geometry_type
+        self.bounds = bounds
+
+        if parametrize_altitudes.any():
+            self.p_alts = parametrize_altitudes
+        else:
+            self.p_alts = self.alts[:]
 
     def _calculate_vapor_pressures(self):
         saturation_vapor_pressures = []
-        for t in self.temps:
-            if t>=0:
-                sat_vps = 0.61121*np.exp((18.678-(t/234.5))*(t/(257.14+t)))
+        for i in range(len(self.temps)):
+            if self.temps[i]>=0:
+                f = 1.0007+(3.46e-6*self.pressures[i])
+                sat_vps = f*0.61121*np.exp(17.502*self.temps[i]/
+                          (240.97+self.temps[i]))
+            elif self.temps[i]>-50:
+                f = 1.0003+(4.18e-6*self.pressures[i])
+                sat_vps = f*0.61115*np.exp(22.452*self.temps[i]/
+                          (272.55+self.temps[i]))
             else:
-                sat_vps = 0.61115*np.exp((23.036-(t/333.7))*(t/(279.82+t)))
+                f = 1.0003+(4.18e-6*self.pressures[i])
+                sat_vps = f*0.61115*np.exp(22.542*self.temps[i]/
+                          (273.48+self.temps[i]))
             saturation_vapor_pressures.append(sat_vps)
 
         actual_vapor_pressures = [self.rhs[i]/100*
                                   saturation_vapor_pressures[i] for i in
                                   range(len(self.rhs))]
-        self.saturation_vps = saturation_vapor_pressures
-        self.vps = actual_vapor_pressures
+        self.saturation_vps = saturation_vapor_pressures[:]
+        self.vps = actual_vapor_pressures[:]
 
-    def hermite_spline(self, p0=0, p1=0, m0=None, m1=1, a=0, b=8000,
-                       n_points=100):
-        if m0 == None:
-            m0 = (self.vps[1]-self.vps[0])/(self.alts[1]-self.alts[0])
+    def normalize_inputs(self, inputs, inverse = False):
+        outputs = np.zeros(len(inputs))
+        bounds = self.bounds[:]
+        if inverse:
+            for i in range(len(inputs)):
+                outputs[i] = (inputs[i]-bounds[i][0])/(bounds[i][1]-bounds[i][0])
+        else:
+            for i in range(len(inputs)):
+                outputs[i] = inputs[i]*(bounds[i][1]-bounds[i][0]) + bounds[i][0]
+        return outputs
 
-        self.spline = HermiteSpline(p0,p1,m0,m1,a,b)
-        self.p_alts = np.linspace(a,b,n_points)
-        self.p_vps = self.spline(parameter=self.p_alts)
-
-        self.p_alts = np.append(self.p_alts, self.cruise_altitude)
-        self.p_vps = np.append(self.p_vps, 0.0)
+    def geometry(self, x):
+        if self.geometry_type == 'spline':
+            p0,m0,m1,b = x
+            self.spline = HermiteSpline(p0=p0,m0=m0,m1=m1,b=b,p1=0,a=0)
+            self.p_vps = self.spline(parameter=np.array(self.p_alts))
+        elif self.geometry_type == 'CST':
+            A = list(x[:-2])
+            A.append(0)
+            chord = max(self.p_alts)
+            deltaLE = x[-1]
+            self.p_vps = CST(altitude, Au=A, deltasLE=0, N1=0, N2=1, c= chord, deltasz=0)
+        elif self.geometry_type == 'spline_bump':
+            p0,m0,m1,m,i,y,b = x
+            index = int(np.round(i))
+            a = 0
+            p1 = 0
+            x = self.p_alts[index]
+            self.spline = SplineBumpHumidity(a=a, b=b, x=x, p0=p0, p1=p1, y=y,
+                                             m0=m0, m1=m1, m=m)
+            self.p_vps = self.spline(parameter=np.array(self.p_alts))
 
     def calculate_humidity_profile(self):
-        self.p_saturation_vps = np.interp(self.p_alts, self.alts,
-                                          self.saturation_vps)
-        self.p_rhs = [100*self.p_vps[i]/self.p_saturation_vps[i] for i in range(
+        self.p_rhs = [100*self.p_vps[i]/self.saturation_vps[i] for i in range(
                                                                len(self.p_vps))]
 
-    def RMSE(self):
-        # Values for RMSE are found (finding values of parametrized profile at
-        #   each altitude of the original profile)
-        predicted_values = list(self.spline(parameter=np.array(self.alts)))
-        self.rmse = mean_squared_error(self.vps, predicted_values)
+    def RMSE(self, x):
+        x = self.normalize_inputs(x)
+        self.geometry(x)
+        p_vps_compare = np.interp(self.alts, self.p_alts, self.p_vps)
+        self.rmse = mean_squared_error(self.vps, p_vps_compare)
+        if self.rmse < 0.01:
+            print(self.rmse)
+        return self.rmse
 
     def plot(self, profile_type='vapor_pressures'):
         fig = plt.figure()
@@ -107,76 +95,20 @@ class ParametrizeHumidity:
             plt.plot(self.vps, self.alts, label='Original')
             plt.plot(self.p_vps, self.p_alts, label='Parametrized')
             plt.xlabel('Vapor Pressure [kPa]')
-            # plt.xlim()
         elif profile_type == 'relative_humidities':
             plt.plot(self.rhs, self.alts, label='Original')
             plt.plot(self.p_rhs, self.p_alts, label='Parametrized')
             plt.xlabel('Relative Humidities [%]')
-            # plt.xlim()
         plt.ylabel('Altitude [m]')
-        # plt.ylim(0,16000)
-        plt.show()
+        plt.legend()
 
-#  WILL IMPORT ABOVE THIS LINE ONCE WORKING
-################################################################################
-import pickle
-from weather.boom import boom_runner, prepare_weather_sBoom
-from weather.scraper.twister import process_data
+    def plot_percent_difference(self, i):
+        i = int(np.round(i))
+        num_ = abs(self.vps[:i]-self.p_vps[:i])
+        den = (self.vps[:i]+self.p_vps[:i])/2
+        percent_diff = num_/den*100
 
-day = '18'
-month = '06'
-year = '2018'
-hour = '12_'
-alt_ft = 45000.
-alt = alt_ft * 0.3048
-
-data, altitudes = process_data(day, month, year, hour, alt,
-                               directory='../../../data/weather/twister/',
-                               convert_celcius_to_fahrenheit=True)
-
-latitude = {'min':13,'max':59}
-longitude = {'min':-144,'max':-52}
-
-noise = {}
-
-for lat in range(latitude['min'], latitude['max']):
-    for lon in range(longitude['min'], longitude['max']):
-        key = '%i, %i' % (52,-100) #% (lat, lon)
-        weather_data = data[key]
-        index = list(data.keys()).index(key)
-        height_to_ground = altitudes[index] / 0.3048  # In feet
-
-        # Parametrization process
-        profile_altitudes, relative_humidities = package_data(weather_data['humidity'])
-        profile_altitudes, temperatures = package_data(weather_data['temperature'])
-        temperatures = convert_to_celcius(temperatures)
-        cruise_altitude = altitudes[index]
-
-        p_profile = ParametrizeHumidity(profile_altitudes,relative_humidities,temperatures,
-                                        cruise_altitude)
-        p_profile.hermite_spline(p0=max(p_profile.vps),p1=0,m1=-1/10000,a=0,b=7000,n_points=5)
-        p_profile.calculate_humidity_profile()
-        p_humidity_profile = package_data(p_profile.p_alts, p_profile.p_rhs, method='pack')
-
-        p_profile.RMSE()
-
-        p_profile.plot(profile_type='vapor_pressures')
-        asdf
-
-        noise.update({key:{'original':0,'parametrized':0,'difference':0}})
-
-        # Noise calculations (original profile)
-        sBoom_data = prepare_weather_sBoom(data, index)
-        noise[key]['original'] = boom_runner(sBoom_data, height_to_ground)
-
-        # Noise calculations (parametrized profile)
-        sBoom_data_parametrized = list(sBoom_data[0:2]) + [p_humidity_profile]
-        noise[key]['parametrized'] = boom_runner(sBoom_data_parametrized, height_to_ground)
-
-        noise[key]['difference'] = noise[key]['original']-noise[key]['parametrized']
-
-        print(noise[key])
-
-noisy = open('noise.p','rb')
-pickle.dump(noise,noisy)
-noisy.close()
+        fig = plt.figure()
+        plt.plot(percent_diff, self.p_alts[:i])
+        plt.xlabel('Percent Difference [%]')
+        plt.ylabel('Altitude [m]')
