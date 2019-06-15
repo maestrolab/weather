@@ -1,14 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
-from examples.boom.twister.misc_humidity import HermiteSpline, SplineBumpHumidity
+from scipy.interpolate import interp1d
+
+from misc_humidity import HermiteSpline, SplineBumpHumidity
 
 class ParametrizeHumidity:
 
     def __init__(self, altitudes, relative_humidities, temperatures,
                  pressures, bounds, parametrize_altitudes = np.array([]),
                  geometry_type = 'spline'):
-        self.alts = altitudes
+        self.alts = np.array(altitudes)
         self.rhs = relative_humidities
         self.temps = temperatures
         self.pressures = pressures
@@ -17,11 +19,12 @@ class ParametrizeHumidity:
         self.bounds = bounds
 
         if parametrize_altitudes.any():
-            self.p_alts = parametrize_altitudes
+            self.p_alts = np.array(parametrize_altitudes)
         else:
-            self.p_alts = self.alts[:]
+            self.p_alts = np.array(self.alts[:])
 
     def _calculate_vapor_pressures(self):
+        '''Arden Buck Equations (1981)'''
         saturation_vapor_pressures = []
         for i in range(len(self.temps)):
             if self.temps[i]>=0:
@@ -41,8 +44,8 @@ class ParametrizeHumidity:
         actual_vapor_pressures = [self.rhs[i]/100*
                                   saturation_vapor_pressures[i] for i in
                                   range(len(self.rhs))]
-        self.saturation_vps = saturation_vapor_pressures[:]
-        self.vps = actual_vapor_pressures[:]
+        self.saturation_vps = np.array(saturation_vapor_pressures[:])
+        self.vps = np.array(actual_vapor_pressures[:])
 
     def normalize_inputs(self, inputs, inverse = False):
         outputs = np.zeros(len(inputs))
@@ -57,9 +60,12 @@ class ParametrizeHumidity:
 
     def geometry(self, x):
         if self.geometry_type == 'spline':
-            p0,m0,m1,b = x
-            self.spline = HermiteSpline(p0=p0,m0=m0,m1=m1,b=b,p1=0,a=0)
+            p0,p1,m0,m1,b = x
+            self.spline = HermiteSpline(p0=p0,m0=m0,m1=m1,b=b,p1=p1,a=0)
             self.p_vps = self.spline(parameter=np.array(self.p_alts))
+            # All points above greater than b will be assigned to the value of p1
+            indexes = np.where(np.array(self.p_alts) > b)
+            self.p_vps[indexes] = p1
         elif self.geometry_type == 'CST':
             A = list(x[:-2])
             A.append(0)
@@ -67,25 +73,48 @@ class ParametrizeHumidity:
             deltaLE = x[-1]
             self.p_vps = CST(altitude, Au=A, deltasLE=0, N1=0, N2=1, c= chord, deltasz=0)
         elif self.geometry_type == 'spline_bump':
-            p0,m0,m1,m,i,y,b = x
-            index = int(np.round(i))
+            p0,p1,m0,m1,m,x,y,b = x
             a = 0
-            p1 = 0
-            x = self.p_alts[index]
             self.spline = SplineBumpHumidity(a=a, b=b, x=x, p0=p0, p1=p1, y=y,
                                              m0=m0, m1=m1, m=m)
             self.p_vps = self.spline(parameter=np.array(self.p_alts))
+            # All points above greater than b will be assigned to the value of p1
+            indexes = np.where(np.array(self.p_alts) > b)
+            self.p_vps[indexes] = p1
+        elif self.geometry_type == 'log':
+            a,b = x
+            self.p_alts[0] = 1
+            self.p_vps = a*np.log(self.p_alts)+b
+        elif self.geometry_type == 'spline_log':
+            p0,p1,m0,m1,b,a = x
+            self.spline = HermiteSpline(p0=p0,p1=p1,m0=m0,m1=m1,b=b,a=a)
+            self.p_vps = self.spline(parameter=np.log(self.p_alts[1:]))
+            self.p_vps = np.append(p0, self.p_vps)
+        elif self.geometry_type == 'spline_bump_log':
+            p0,p1,m0,m1,m,x,y,a,b = x
+            self.spline = SplineBumpHumidity(a=a, b=b, x=x, p0=p0, p1=p1, y=y,
+                                             m0=m0, m1=m1, m=m)
+            self.p_vps = self.spline(parameter=np.log(self.p_alts[1:]))
+            self.p_vps = np.append(p0, self.p_vps)
+            # # All points above greater than b will be assigned to the value of p1
+            # indexes = np.where(np.log(self.p_alts[1:]) > b)
+            # self.p_vps[indexes] = p1
 
     def calculate_humidity_profile(self):
         self.p_rhs = [100*self.p_vps[i]/self.saturation_vps[i] for i in range(
                                                                len(self.p_vps))]
 
-    def RMSE(self, x):
+    def RMSE(self, x, sample_weights = None, print_rmse = 'False'):
         x = self.normalize_inputs(x)
         self.geometry(x)
-        p_vps_compare = np.interp(self.alts, self.p_alts, self.p_vps)
-        self.rmse = mean_squared_error(self.vps, p_vps_compare)
-        if self.rmse < 0.01:
+        if (self.alts == self.p_alts).any():
+            self.rmse = mean_squared_error(self.vps, self.p_vps,
+                                           sample_weight = sample_weights)
+        else:
+            p_vps_compare = np.interp(self.alts, self.p_alts, self.p_vps)
+            self.rmse = mean_squared_error(self.vps, p_vps_compare,
+                                           sample_weight = sample_weights)
+        if print_rmse == 'True':
             print(self.rmse)
         return self.rmse
 
@@ -95,20 +124,25 @@ class ParametrizeHumidity:
             plt.plot(self.vps, self.alts, label='Original')
             plt.plot(self.p_vps, self.p_alts, label='Parametrized')
             plt.xlabel('Vapor Pressure [kPa]')
+            plt.ylabel('Altitude [m]')
         elif profile_type == 'relative_humidities':
             plt.plot(self.rhs, self.alts, label='Original')
             plt.plot(self.p_rhs, self.p_alts, label='Parametrized')
             plt.xlabel('Relative Humidities [%]')
-        plt.ylabel('Altitude [m]')
+            plt.ylabel('Altitude [m]')
+        elif profile_type == 'log':
+            plt.plot(self.vps[1:], np.log(self.alts[1:]), label='Original')
+            plt.plot(self.p_vps[1:], np.log(self.p_alts[1:]), label='Parametrized')
+            plt.xlabel('Vapor Pressure [kPa]')
+            plt.ylabel('log(Altitude)')
         plt.legend()
 
-    def plot_percent_difference(self, i):
-        i = int(np.round(i))
-        num_ = abs(self.vps[:i]-self.p_vps[:i])
-        den = (self.vps[:i]+self.p_vps[:i])/2
+    def plot_percent_difference(self):
+        num_ = abs(abs(self.vps)-abs(self.p_vps))
+        den = (abs(self.vps)+abs(self.p_vps))/2
         percent_diff = num_/den*100
 
         fig = plt.figure()
-        plt.plot(percent_diff, self.p_alts[:i])
+        plt.plot(percent_diff, self.p_alts)
         plt.xlabel('Percent Difference [%]')
         plt.ylabel('Altitude [m]')
