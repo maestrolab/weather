@@ -4,8 +4,7 @@ ClassifiedProfile class.'''
 import pickle
 from weather.scraper.twister import process_data
 
-from examples.boom.twister.humidity_spline_parametrization.misc_humidity import \
-                                                package_data, combine_profiles
+from misc_humidity import package_data, combine_profiles
 
 day = '18'
 month = '06'

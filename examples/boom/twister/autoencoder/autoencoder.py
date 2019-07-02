@@ -111,9 +111,12 @@ class Autoencoder:
         pass
 
 if __name__ == '__main__':
-    x = np.random.randint(2,size=(100,4))
-    auto = Autoencoder(data = x, encoding_dims = [10])
+    # import pickle
+    # data = pickle.load(open('2018_06_18_12_all_temperature.p','rb'))
+    # data = np.array([np.array(data[i]) for i in range(len(data))])
+    x = np.random.randint(10,size=(100,10))
+    auto = Autoencoder(data = x, encoding_dims = [3])
     auto.init_model()
     auto.train(batch_size=20, epochs=50)
-    parameter = np.array([np.array([1,1,1,1])])
+    parameter = np.array([np.array([3,5,7,1,3,3,9,8,1,2])])
     result = auto(parameter = parameter)

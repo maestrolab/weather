@@ -14,6 +14,27 @@ class SplineBumpHumidity:
         self._a = [a, x]
         self._b = [x, b]
 
+    def _configure_output(self, output, spline, parameter, spline_num,
+                          x_location):
+        '''_configure_output evaluates the given spline for the given parameter
+        taking into account if the desired connecting point is in the parameter
+        dataset or not'''
+        if x_location == 'missing':
+            if spline_num == 0:
+                output = np.append(output, 0)
+                index = np.where(parameter < self._a[1])
+                self._temporary_x_location = index[0][-1]+1
+            parameter = np.insert(parameter, self._temporary_x_location,
+                                  self._a[1])
+            output += spline(parameter)
+            parameter = np.delete(parameter, self._temporary_x_location)
+            if spline_num == 1:
+                output = np.delete(output, self._temporary_x_location)
+        elif x_location == 'found':
+            output += spline(parameter)
+
+        return output
+
     def __call__(self, parameter):
         output = np.zeros(len(parameter))
         for i in range(2):
@@ -23,21 +44,12 @@ class SplineBumpHumidity:
 
             # Output is computed if x is in data set or not
             if not (parameter == self._a[1]).any():
-                if i == 0:
-                    output = np.append(output, 0)
-                    index = np.where(parameter < self._a[1])
-                    i1 = index[0][-1]+1
-                else:
-                    output[i1] = 0
-                parameter = np.insert(parameter, i1, self._a[1])
-                output += spline(parameter)
-                parameter = np.delete(parameter, i1)
-                if i == 1:
-                    output = np.delete(output, i1)
+                x_location = 'missing'
             else:
-                output += spline(parameter)
-                i2 = np.where(parameter == self._a[1])
-                output[i2[0]] = self._p0[1]
+                x_location = 'found'
+
+            output = self._configure_output(output, spline, parameter, i,
+                                            x_location)
 
         return output
 
@@ -130,19 +142,23 @@ def convert_to_celcius(temperature_F):
 
 def initialize_sample_weights(profile, type = 'linear', flip = False,
                               inverse = False):
-    sample_funs = {None:None, 'linear':1, 'quadratic':2, 'cubic':3, 'quartic':4,
+    sample_funs = {'linear':1, 'quadratic':2, 'cubic':3, 'quartic':4,
                    'quintic':5}
 
     sample_weights = np.linspace(0,1,len(profile))
     if type == 'bump':
-        sample_weights = -4*(sample_weights-0.5)**2+1
-    else:
+        # sample_weights = -0.5*(sample_weights+0.2)**2+sample_weights+1
+        sample_weights = -2*(sample_weights-0.5)**2+0.99
+    elif type != None:
         sample_weights = sample_weights**sample_funs[type]
+    else:
+        sample_weights = None
 
-    if flip:
-        sample_weights = np.flip(sample_weights)
-    if inverse:
-        sample_weights = np.reciprocal(sample_weights)
+    if type != None:
+        if flip:
+            sample_weights = np.flip(sample_weights)
+        if inverse:
+            sample_weights = sample_weights**-1-1
 
     return sample_weights
 

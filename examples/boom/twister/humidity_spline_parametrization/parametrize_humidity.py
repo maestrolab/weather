@@ -62,7 +62,7 @@ class ParametrizeHumidity:
         if self.geometry_type == 'spline':
             p0,p1,m0,m1,b = x
             self.spline = HermiteSpline(p0=p0,m0=m0,m1=m1,b=b,p1=p1,a=0)
-            self.p_vps = self.spline(parameter=np.array(self.p_alts))
+            self.p_vps = self.spline(parameter = np.array(self.p_alts))
             # All points above greater than b will be assigned to the value of p1
             indexes = np.where(np.array(self.p_alts) > b)
             self.p_vps[indexes] = p1
@@ -77,25 +77,30 @@ class ParametrizeHumidity:
             a = 0
             self.spline = SplineBumpHumidity(a=a, b=b, x=x, p0=p0, p1=p1, y=y,
                                              m0=m0, m1=m1, m=m)
-            self.p_vps = self.spline(parameter=np.array(self.p_alts))
+            self.p_vps = self.spline(parameter = np.array(self.p_alts))
             # All points above greater than b will be assigned to the value of p1
             indexes = np.where(np.array(self.p_alts) > b)
             self.p_vps[indexes] = p1
         elif self.geometry_type == 'log':
             a,b = x
+            # Need to fix; not a good method (but linear fit in log domain does
+            #   not appear to be the best option for parametrization so may not
+            #   correct)
             self.p_alts[0] = 1
             self.p_vps = a*np.log(self.p_alts)+b
         elif self.geometry_type == 'spline_log':
             p0,p1,m0,m1,b,a = x
             self.spline = HermiteSpline(p0=p0,p1=p1,m0=m0,m1=m1,b=b,a=a)
-            self.p_vps = self.spline(parameter=np.log(self.p_alts[1:]))
-            self.p_vps = np.append(p0, self.p_vps)
+            log_alts = np.append(a, np.log(self.p_alts[1:]))
+            self.p_vps = self.spline(parameter = log_alts)
+            # indexes = np.where(np.log(self.p_alts[1:]) > b)
+            # self.p_vps[indexes] = p1
         elif self.geometry_type == 'spline_bump_log':
             p0,p1,m0,m1,m,x,y,a,b = x
             self.spline = SplineBumpHumidity(a=a, b=b, x=x, p0=p0, p1=p1, y=y,
                                              m0=m0, m1=m1, m=m)
-            self.p_vps = self.spline(parameter=np.log(self.p_alts[1:]))
-            self.p_vps = np.append(p0, self.p_vps)
+            log_alts = np.append(a, np.log(self.p_alts[1:]))
+            self.p_vps = self.spline(parameter = log_alts)
             # # All points above greater than b will be assigned to the value of p1
             # indexes = np.where(np.log(self.p_alts[1:]) > b)
             # self.p_vps[indexes] = p1
@@ -104,17 +109,22 @@ class ParametrizeHumidity:
         self.p_rhs = [100*self.p_vps[i]/self.saturation_vps[i] for i in range(
                                                                len(self.p_vps))]
 
-    def RMSE(self, x, sample_weights = None, print_rmse = 'False'):
+    def RMSE(self, x, profile_type = 'vapor_pressures', sample_weights = None,
+             print_rmse = False):
         x = self.normalize_inputs(x)
         self.geometry(x)
-        if (self.alts == self.p_alts).any():
-            self.rmse = mean_squared_error(self.vps, self.p_vps,
-                                           sample_weight = sample_weights)
-        else:
-            p_vps_compare = np.interp(self.alts, self.p_alts, self.p_vps)
-            self.rmse = mean_squared_error(self.vps, p_vps_compare,
-                                           sample_weight = sample_weights)
-        if print_rmse == 'True':
+        if profile_type == 'vapor_pressures':
+            if (self.alts == self.p_alts).any():
+                self.rmse = mean_squared_error(self.vps, self.p_vps,
+                                               sample_weight = sample_weights)
+            else:
+                p_vps_compare = np.interp(self.alts, self.p_alts, self.p_vps)
+                self.rmse = mean_squared_error(self.vps, p_vps_compare,
+                                               sample_weight = sample_weights)
+        elif profile_type == 'relative_humidities':
+            self.calculate_humidity_profile()
+            self.rmse = mean_squared_error(self.rhs, self.p_rhs, sample_weight = sample_weights)
+        if print_rmse:
             print(self.rmse)
         return self.rmse
 
