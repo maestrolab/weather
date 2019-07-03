@@ -5,19 +5,26 @@ from scipy.interpolate import Rbf
 import pickle
 
 from aeropy.xfoil_module import output_reader
-from weather import process_noise
-
 
 # Creating surrogate surface from pldb data
-day = '18'
-month = '06'
 year = '2018'
+month = '06'
+day = '21'
 hour = '12'
 altitude = '50000'
+input_directory = '../../data/noise/'
+filename = input_directory + year + month + day + '_' + hour + '_' + altitude + '.p'
 
-filename = "../../data/noise/" + year + month + day + "_" + hour + "_" + altitude
-data = process_noise(filename)
-lon, lat, noise = data.T
+alt_ft = 50000
+
+# Process weather data
+f = open(filename, 'rb')
+data = pickle.load(f)
+f.close()
+
+lon = data.lonlat[:, 0]
+lat = data.lonlat[:, 1]
+noise = data.noise
 rbf = Rbf(lon, lat, noise)  # compared for same lat and lon and they look good
 
 # Extracting population data
@@ -32,6 +39,7 @@ raw_data = output_reader('../../data/us_census/location.txt',
                          type_structure=type_structure)
 data = []
 undesired_states = ['02', '15']
+print(len(raw_data['GEOID']))
 for i in range(len(raw_data['GEOID'])):
     print(i)
     state_id = raw_data['GEOID'][i][:2]
@@ -62,10 +70,7 @@ map_lon, map_lat = m(*(lon, lat))
 m.drawstates()
 m.drawcountries(linewidth=1.0)
 m.drawcoastlines()
-print(data)
 
-print(lat)
-print(lon)
 m.scatter(map_lon, map_lat, marker='D', color='m')
 plt.show()
 print(data)

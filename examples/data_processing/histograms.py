@@ -20,14 +20,14 @@ def exterior_annoyance(PL):
     return(annoyance)
 
 
-day = '18'
+day = '21'
 month = '06'
 year = '2018'
-hour = '12'
+hour = '00'
 
-min_noise = 77.75
-max_noise = 88.25
-n_noise = 21
+min_noise = 75.5
+max_noise = 85.5
+n_noise = 10
 
 # Get noise data
 filename = "../../data/noise/noise_per_county"

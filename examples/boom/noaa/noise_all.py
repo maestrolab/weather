@@ -14,8 +14,6 @@ input_directory = '../../../matlab/'
 output_directory = '../../../data/noise/'
 filename = input_directory + year + month + day + '_' + hour + '.mat'
 
-longitude = -107
-latitude = 38
 alt_ft = 50000
 
 # Process weather data
@@ -25,11 +23,11 @@ for index in range(len(data.lonlat)):
     sBoom_data, altitude = output_for_sBoom(data, data.lonlat[index][0],
                                             data.lonlat[index][1], alt_ft)
     try:
-        noise = boom_runner(sBoom_data, altitude, pressure_signature)
+        noise = boom_runner(sBoom_data, altitude)
     except:
         # Remove highest wind point in case of failure. Usually the reason
         sBoom_data[1] = sBoom_data[1][:-1]
-        noise = boom_runner(sBoom_data, altitude, pressure_signature)
+        noise = boom_runner(sBoom_data, altitude)
     print(data.lonlat[index], noise)
     data.noise.append(noise)
 

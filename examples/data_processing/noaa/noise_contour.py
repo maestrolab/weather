@@ -6,9 +6,9 @@ import pickle
 
 from weather.scraper.noaa import process
 year = '2018'
-month = '12'
+month = '06'
 day = '21'
-hour = '12'
+hour = '00'
 alt_ft = 50000
 directory = '../../../data/noise/'
 filename = directory + year + month + day + '_' + hour + '_' + \

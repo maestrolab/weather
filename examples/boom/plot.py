@@ -44,7 +44,6 @@ for altitude in altitudes:
     properties_at_altitude = []
     for i in range(len(data['noise'])):
         alt, property = np.array(data['humidity'][i]).T
-        print(altitude, min(alt), max(alt))
         f = interp1d(alt, property)
         properties_at_altitude.append(f(altitude))
     properties_av.append(np.average(properties_at_altitude))
@@ -56,11 +55,13 @@ for i in range(len(np.array(data['noise']))):
     alt, property = np.array(data['humidity'][i]).T
     plt.plot(property, alt, 'k', alpha=0.05)
 # plt.plot(properties_av, altitudes, 'r')
-plt.plot(properties_median, altitudes, 'r')
+plt.plot(properties_av, altitudes, 'r')
 # plt.plot(np.array(properties_av) + np.array(properties_std)/2., altitudes, '--r')
 # plt.plot(np.array(properties_av) - np.array(properties_std)/2., altitudes, '--r')
 plt.ylabel('Altitude (m)')
 plt.xlabel('Relative humidity (%)')
+plt.ylim(0, 35000)
+plt.xlim(0, 100)
 plt.show()
 
 # Error plot
@@ -73,36 +74,13 @@ ax.set_xticks(x_axis)  # set tick positions
 ax.set_xticklabels(x)
 
 
-eb = ax.errorbar(x_axis, average, std, marker='', fmt='none', color='k', capsize=5,
+eb = ax.errorbar(x_axis, average, std, marker='', color='k', capsize=5,
                  elinewidth=2,
                  markeredgewidth=2, ecolor='k',  ls='--')
-plt.scatter(x_axis, median, c='k')
+plt.scatter(x_axis, average, c='k')
 # eb[-1][0].set_linestyle('-- ')
 # plt.fill_between(x, y3, y4, color='grey', alpha='0.5')
 plt.ylim(min(data['noise']), max(data['noise']))
 plt.xlabel('Time in 2018')
 plt.ylabel('Perceived level in dB (PLdB)')
-plt.show()
-
-
-def setBoxColors(bp, color):
-    plt.setp(bp['boxes'], color=color)
-    plt.setp(bp['whiskers'], color=color)
-    plt.setp(bp['caps'], color=color)
-    plt.setp(bp['medians'], color=color)
-
-
-fig, ax = plt.subplots(1, 1)
-print(len(data_per_month))
-bp1 = plt.boxplot(data_per_month, positions=np.array(
-    range(len(data_per_month)))*2.0-0.4, showfliers=False)
-bp2 = plt.boxplot(data_per_month, positions=np.array(
-    range(len(data_per_month)))*2.0+0.4, showfliers=False)
-setBoxColors(bp1, 'blue')
-setBoxColors(bp2, 'red')
-plt.xticks(x_axis, x)
-# ax.set_xticklabels(x)
-plt.xlabel('Time in 2018')
-plt.ylabel('Perceived level in dB (PLdB)')
-plt.xlim(-2, len(x)*2)
 plt.show()

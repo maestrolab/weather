@@ -35,9 +35,8 @@ def process_properties(data, property, altitude):
     for altitude in altitudes:
         properties_at_altitude = []
         for i in range(len(data['noise'])):
-            alt, property = np.array(data[property][i]).T
-            print(altitude, min(alt), max(alt))
-            f = interp1d(alt, property)
+            alt, props = np.array(data[property][i]).T
+            f = interp1d(alt, props)
             properties_at_altitude.append(f(altitude))
         properties_av.append(np.average(properties_at_altitude))
         properties_median.append(np.median(properties_at_altitude))
@@ -70,11 +69,12 @@ plt.xlabel('Time in 2018')
 plt.ylabel('Perceived level in dB (PLdB)')
 
 fig2, ax2 = plt.subplots(1, 1)
-plt.xlabel('Time in 2018')
-plt.ylabel('Perceived level in dB (PLdB)')
+plt.ylabel('Altitude (m)')
+plt.xlabel('Relative humidity (%)')
 
 
 colors = ['b', 'r']
+colors_h = ['1.0', '0.0']
 offset = [-0.4, 0.]
 for i in range(len(locations)):
     location = locations[i]
@@ -89,11 +89,20 @@ for i in range(len(locations)):
     ax1.errorbar(x_axis, average, std, marker='', color=color, capsize=5,  # , fmt='none'
                  elinewidth=2,
                  markeredgewidth=2, ecolor=color,  ls='--')
-    ax1.scatter(x_axis, median, c=color)
+    ax1.scatter(x_axis, average, c=color)
 
-    bp = ax2.boxplot(data_per_month, positions=np.array(
-        range(len(data_per_month)))*1.0+offset[i], showfliers=False)
-    setBoxColors(bp, color)
-
-plt.xlim(-1, len(x))
+    for j in range(len(np.array(data['noise']))):
+        alt, property = np.array(data['humidity'][j]).T
+        ax2.plot(property, alt, colors_h[i], alpha=0.05)
+    # plt.plot(properties_av, altitudes, 'r')
+for i in range(len(locations)):
+    location = locations[i]
+    color = colors[i]
+    f = open(location + '.p', 'rb')
+    data = pickle.load(f)
+    f.close()
+    altitudes = np.linspace(0, altitude * 0.3048 - data['height'][0][0])
+    [properties_av, properties_median, properties_std] = process_properties(
+        data, 'humidity', altitude)
+    ax2.plot(properties_av, altitudes, color)
 plt.show()
