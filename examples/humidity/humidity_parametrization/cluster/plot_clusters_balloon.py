@@ -42,7 +42,7 @@ fig, ax = plt.subplots(nrows = 2, ncols = 2)
 for key in keys[:]:
     alts, rh = package_data(truncated_profiles[key])
     row, col = row_col[cluster_assignments[key][0]]
-    ax[row][col].plot(rh, alts, alpha = 0.025, color = 'k')
+    ax[row][col].plot(rh, alts, alpha = 0.2)#, color = 'k')
 
 # Set x and y axis titles for each subplot
 j = list(range(4))

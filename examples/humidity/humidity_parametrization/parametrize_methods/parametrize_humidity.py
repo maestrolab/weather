@@ -93,17 +93,12 @@ class ParametrizeHumidity:
             self.spline = HermiteSpline(p0=p0,p1=p1,m0=m0,m1=m1,b=b,a=a)
             log_alts = np.append(a, np.log(self.p_alts[1:]))
             self.p_vps = self.spline(parameter = log_alts)
-            # indexes = np.where(np.log(self.p_alts[1:]) > b)
-            # self.p_vps[indexes] = p1
         elif self.geometry_type == 'spline_bump_log':
             p0,p1,m0,m1,m,x,y,a,b = x
             self.spline = SplineBumpHumidity(a=a, b=b, x=x, p0=p0, p1=p1, y=y,
                                              m0=m0, m1=m1, m=m)
             log_alts = np.append(a, np.log(self.p_alts[1:]))
             self.p_vps = self.spline(parameter = log_alts)
-            # # All points above greater than b will be assigned to the value of p1
-            # indexes = np.where(np.log(self.p_alts[1:]) > b)
-            # self.p_vps[indexes] = p1
 
     def calculate_humidity_profile(self):
         self.p_rhs = [100*self.p_vps[i]/self.saturation_vps[i] for i in range(
@@ -146,13 +141,3 @@ class ParametrizeHumidity:
             plt.xlabel('Vapor Pressure [kPa]')
             plt.ylabel('log(Altitude)')
         plt.legend()
-
-    def plot_percent_difference(self):
-        num_ = abs(abs(self.vps)-abs(self.p_vps))
-        den = (abs(self.vps)+abs(self.p_vps))/2
-        percent_diff = num_/den*100
-
-        fig = plt.figure()
-        plt.plot(percent_diff, self.p_alts)
-        plt.xlabel('Percent Difference [%]')
-        plt.ylabel('Altitude [m]')

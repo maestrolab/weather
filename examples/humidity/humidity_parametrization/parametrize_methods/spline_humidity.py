@@ -11,19 +11,18 @@ if __name__ == '__main__':
 
     from parametrize_humidity import ParametrizeHumidity
     from misc_humidity import package_data, convert_to_celcius
-    from parametrization_method import parametrization_method
 
     day = '18'
     month = '06'
     year = '2018'
     hour = '12_'
-    lat = 40
-    lon = -111
+    lat = 52
+    lon = -80
     alt_ft = 45000.
     alt = alt_ft * 0.3048
 
     data, altitudes = process_data(day, month, year, hour, alt,
-                                   directory='../../../../data/weather/twister/',
+                                   directory='./../../../../data/weather/twister/',
                                    convert_celcius_to_fahrenheit=True)
 
     key = '%i, %i' % (lat, lon)
@@ -43,13 +42,9 @@ if __name__ == '__main__':
                                     temperatures, pressures, bounds=bounds,
                                     geometry_type='spline')
 
-    sample_weights = None
-
     # Optimize profile
     profile_types = ['vapor_pressures','relative_humidities']
     profile_type = profile_types[1]
-    # fun = lambda x: p_profile.RMSE(x, profile_type = profile_type,
-    #                                sample_weights = sample_weights)
     fun = p_profile.RMSE
     bounds_normalized = [(0,1) for i in range(len(bounds))]
     res = differential_evolution(fun, bounds = bounds_normalized,
@@ -60,9 +55,8 @@ if __name__ == '__main__':
     x = p_profile.normalize_inputs(res.x)
     p_profile.geometry(x)
     p_profile.calculate_humidity_profile()
-    p_profile.RMSE(res.x, profile_type = profile_type,
-                   sample_weights = sample_weights, print_rmse = False)
-    # p_profile.plot()
+    p_profile.RMSE(res.x, profile_type = profile_type, print_rmse = False)
+    p_profile.plot()
     p_profile.plot(profile_type='relative_humidities')
     plt.show()
 

@@ -10,7 +10,7 @@ from weather.boom import boom_runner, prepare_weather_sBoom
 from weather.scraper.twister import process_data
 
 from parametrize_humidity import ParametrizeHumidity
-from misc_humidity import package_data, convert_to_celcius, initialize_sample_weights
+from misc_humidity import package_data, convert_to_celcius
 
 day = '18'
 month = '06'
@@ -42,11 +42,8 @@ p_profile = ParametrizeHumidity(profile_altitudes, relative_humidities,
                                 temperatures, pressures, bounds = bounds,
                                 geometry_type = 'log')
 
-# Apply sample weights
-sample_weights = initialize_sample_weights(profile_altitudes, type = 'quartic')
-
 # Optimize profile
-fun = lambda x: p_profile.RMSE(x, sample_weights = sample_weights)
+fun = lambda x: p_profile.RMSE(x)
 bounds_normalized = [(0,1) for i in range(len(bounds))]
 res = differential_evolution(fun, bounds = bounds_normalized)
 
@@ -55,7 +52,7 @@ x = p_profile.normalize_inputs(res.x)
 # print(x)
 p_profile.geometry(x)
 p_profile.calculate_humidity_profile()
-p_profile.RMSE(res.x, sample_weights = sample_weights, print_rmse = 'True')
+p_profile.RMSE(res.x, print_rmse = 'True')
 p_profile.plot()
 p_profile.plot(profile_type = 'relative_humidities')
 p_profile.plot(profile_type = 'log')
@@ -66,7 +63,7 @@ p_humidity_profile = package_data(p_profile.alts, p_profile.p_rhs, method='pack'
 noise = {'original':0,'parametrized':0,'difference':0}
 
 # Noise calculations (original profile)
-nearfield_file='../../../../data/nearfield/25D_M16_RL5.p'
+nearfield_file='./../../../../data/nearfield/25D_M16_RL5.p'
 sBoom_data = [weather_data['temperature'], 0, weather_data['humidity']]
 height_to_ground = p_profile.alts[-1] / 0.3048
 noise['original'] = boom_runner(sBoom_data, height_to_ground, nearfield_file=nearfield_file)

@@ -1,6 +1,7 @@
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 ################################################################################
 class SplineBumpHumidity:
@@ -140,28 +141,6 @@ def convert_to_celcius(temperature_F):
     temperature_C = (5/9)*(temperature_F-32)
     return temperature_C
 
-def initialize_sample_weights(profile, type = 'linear', flip = False,
-                              inverse = False):
-    sample_funs = {'linear':1, 'quadratic':2, 'cubic':3, 'quartic':4,
-                   'quintic':5}
-
-    sample_weights = np.linspace(0,1,len(profile))
-    if type == 'bump':
-        # sample_weights = -0.5*(sample_weights+0.2)**2+sample_weights+1
-        sample_weights = -2*(sample_weights-0.5)**2+0.99
-    elif type != None:
-        sample_weights = sample_weights**sample_funs[type]
-    else:
-        sample_weights = None
-
-    if type != None:
-        if flip:
-            sample_weights = np.flip(sample_weights)
-        if inverse:
-            sample_weights = sample_weights**-1-1
-
-    return sample_weights
-
 def package_data(data1, data2=None, method='unpack'):
     '''package_data packs or unpacks data in the form [[data1, data2]]'''
     if method == 'pack':
@@ -172,8 +151,8 @@ def package_data(data1, data2=None, method='unpack'):
         unpacked_data_2 = [d[1] for d in data1]
         return unpacked_data_1, unpacked_data_2
 
-def prepare_standard_profiles(standard_profiles_path=
-'./../../../data/weather/standard_profiles/standard_profiles.p'):
+def prepare_standard_profiles(standard_profiles_path =
+'./../../../../data/weather/standard_profiles/standard_profiles.p'):
        standard_profiles = pickle.load(open(standard_profiles_path,'rb'))
 
        # Interpolate temperature values at altitudes in relative humidity profile
@@ -181,10 +160,14 @@ def prepare_standard_profiles(standard_profiles_path=
        rh_altitudes, rhs = package_data(standard_profiles['relative humidity'])
        pressure_altitudes, pressures = package_data(standard_profiles['pressure'])
 
-       standard_profiles['original'] = standard_profiles['pressure'][:]
+       standard_profiles['original_pressures'] = standard_profiles['pressure'][:]
+       standard_profiles['original_temperatures'] = standard_profiles['temperature'][:]
 
-       temperatures = np.interp(rh_altitudes, temperature_altitudes, temperatures)
-       pressures = np.interp(rh_altitudes, pressure_altitudes, pressures)
+       fun_temperature = interp1d(temperature_altitudes, temperatures)
+       fun_pressure = interp1d(pressure_altitudes, pressures)
+
+       temperatures = fun_temperature(rh_altitudes)
+       pressures = fun_pressure(rh_altitudes)
 
        standard_profiles['temperature'] = package_data(rh_altitudes,
                                                         temperatures, method='pack')

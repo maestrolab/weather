@@ -29,6 +29,10 @@ def interpolate_profiles(reference_profile, profiles, include_reference = False)
     ref_alts, ref_rh = package_data(reference_profile)
     ref_alts = np.array(ref_alts)
 
+    #######
+    # n = 250
+    # ref_alts = np.linspace(0,13500,n)
+
     # Interpolate each profile
     interpolated_profiles = [reference_profile]
 
@@ -46,6 +50,9 @@ def interpolate_profiles(reference_profile, profiles, include_reference = False)
             alts_to_interp = ref_alts[:]
 
         interp_rh = fun(alts_to_interp)
+
+        ######
+        # interp_rh = fun(ref_alts)
 
         interpolated_profile = package_data(alts_to_interp, interp_rh,
                                             method = 'pack')
