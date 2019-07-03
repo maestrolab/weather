@@ -23,7 +23,6 @@ index = list(data.keys()).index(key)
 height_to_ground = altitudes[index] / 0.3048  # In feet
 sBoom_data = prepare_weather_sBoom(data, index)
 [temperature, wind, humidity] = sBoom_data
-print(temperature)
 noise = boom_runner(sBoom_data, height_to_ground)
 
 print(noise)

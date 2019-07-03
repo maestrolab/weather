@@ -4,10 +4,10 @@ from weather.scraper.twister import process_data
 import platform
 
 
-run_method = 'EquivArea'
-
+# run_method = 'EquivArea'
+# deformation = 'cubic'
 # Bump design variables
-bump_inputs = read_input('axie_bump_inputs.txt')
+deformation, run_method, bump_inputs = read_input('axie_bump_inputs.txt')
 
 # Flight conditions inputs
 #day = '18'
@@ -61,8 +61,8 @@ index = list(data.keys()).index(key)
 height_to_ground = altitudes[index] / 0.3048
 
 CASE_DIR = "./"  # axie bump case
-PANAIR_EXE = 'panair.exe'  # name of the panair executable
-SBOOM_EXE = 'sboom_windows.dat.allow.exe'  # name of the sboom executable
+#PANAIR_EXE = 'panair.exe'  # name of the panair executable
+#SBOOM_EXE = 'sboom_windows.dat.allow'  # name of the sboom executable
 
 print(platform.system())
 if platform.system() == 'Linux' or platform.system() == 'Darwin':
@@ -78,14 +78,16 @@ else:
 if run_method == 'panair':
 	axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE,
                     altitude=height_to_ground,
-                    weather=weather_data)
+                    weather=weather_data,
+                    deformation=deformation)
 	axiebump.MESH_COARSEN_TOL = 0.00045
 	axiebump.N_TANGENTIAL = 20
 	loudness = axiebump.run(bump_inputs)
 elif run_method == 'EquivArea':
 	axiebump = EquivArea(CASE_DIR, SBOOM_EXE,
                     altitude=height_to_ground,
-                    weather=weather_data)
+                    weather=weather_data,
+                    deformation=deformation)
 	loudness = axiebump.run(bump_inputs)
 else:
 	raise RuntimeError("evaluation method not recognized")

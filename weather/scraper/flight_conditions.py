@@ -49,12 +49,15 @@ class Airframe(object):
         data = read_csv(self.csv_filepath, sep=',', header=0,
                         encoding='latin-1', skiprows=[1], dtype=dtype)
 
-        # Convert Dataframe to dictionary; convert 'model' values to string
+        # Convert Dataframe to dictionary; convert 'model' and 'typecode' values
+        #   to strings
         data = {'icao24':data['icao24'].values,
                 'typecode':data['typecode'].values,
                 'model':data['model'].values}
         data['model'] = [str(data['model'][i]) for i in
                          range(len(data['model']))]
+        data['typecode'] = [str(data['typecode'][i]) for i in
+                         range(len(data['typecode']))]
 
         if list(data.keys()) != ['icao24','typecode','model']:
             raise SyntaxError('Workbook must have columns: icao24, typecode, '
@@ -67,7 +70,7 @@ class Airframe(object):
             # Pull icao24s for Cessna airframes.
             if key[0] == 'C':
                 airframeDict[key]['icao24List'] = [data['icao24'][i] for i in
-                    range(len(data['model'])) if data['model'][i][0:3] == key[1:]]
+                 range(len(data['model'])) if data['model'][i][0:3] == key[1:]]
             # Pull icao24s for Airbus, Boeing, and all other airframes.
             else:
                 airframeDict[key]['icao24List'] = [data['icao24'][i+1] for i in
@@ -78,7 +81,8 @@ class Airframe(object):
 
     def update_OpenSkyApi(self, desired_airframes=['C172'],
                           num_data_points=1000, time_increment=15,
-                          save_data=True):
+                          save_data=True, api_username='jplilly25',
+                          api_password='flightparameters'):
 
         def filter_icao24s(icao24_list):
             '''filter_icao24s removes icao24 codes that are invalid (length is
@@ -112,7 +116,7 @@ class Airframe(object):
             '''scrape_opensky_data scrapes data at a given timestamp for a list
             of icao24s.'''
             for t in timestamp_list:
-                api = OpenSkyApi('jplilly25', 'Crossfit25')
+                api = OpenSkyApi(api_username, api_password)
                 state = api.get_states(time_secs=t, icao24=icao24s)
                 for n in range(len(state.states)):
                     if state.states[n]:
@@ -144,17 +148,20 @@ class Airframe(object):
         while len(flight_parameters['velocity']) < num_data_points:
             for n in list(icao24s.keys()):
                 # Checks to see if airframe data is present at the current timestamp
-                api = OpenSkyApi('jplilly25', 'Crossfit25')
+                api = OpenSkyApi(api_username, api_password)
                 state = api.get_states(time_secs=timestamp, icao24=icao24s[n])
 
                 # If a airframe data is present at the current timestamp, sample
                 #   surrounding timestamps for more airframe data.
-                if state.states:
+                if state:
                     t1 = timestamp - ((time_increment-1)*60)
                     t2 = timestamp + ((time_increment-1)*60)
                     timestamp_list = np.linspace(t1, t2, (t2-t1)/60+1)
                     flight_parameters = scrape_opensky_data(timestamp_list,
                                                  icao24s[n], flight_parameters)
+
+                if len(flight_parameters['velocity']) >= num_data_points:
+                    break
             timestamp += time_increment*60
 
         # Storing values
