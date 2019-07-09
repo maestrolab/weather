@@ -27,14 +27,14 @@ def refine_profiles(data, keys, altitudes):
 day = '18'
 month = '06'
 year = '2018'
-hour = '12'
+hour = '12_'
 lat = 52
 lon = -80
 alt_ft = 45000.
 alt = alt_ft * 0.3048
 
 nearfield_file = './../../../../data/nearfield/25D_M16_RL5.p'
-profile_type = 'vapor_pressures'
+profile_type = 'relative_humidities'
 geometry_type = 'spline_bump'
 if geometry_type == 'spline_log':
     bounds = [[0.5, 3], [0., 0.01], [-1., 1.], [-0.01, 0.], [6, 14], [0, 7]]

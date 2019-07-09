@@ -4,7 +4,7 @@ if __name__ == '__main__':
     import pickle
     import numpy as np
     import matplotlib.pyplot as plt
-    from scipy.optimize import differential_evolution
+    from scipy.optimize import differential_evolution, basinhopping
 
     from weather.boom import boom_runner, prepare_weather_sBoom
     from weather.scraper.twister import process_data
@@ -12,19 +12,17 @@ if __name__ == '__main__':
     from parametrize_humidity import ParametrizeHumidity
     from misc_humidity import package_data, convert_to_celcius
 
-    from choose_cluster_percent_area import choose_method
-
     day = '18'
     month = '06'
     year = '2018'
     hour = '12_'
-    lat = 31
-    lon = -111
+    lat = 52
+    lon = -80
     alt_ft = 45000.
     alt = alt_ft * 0.3048
 
     data, altitudes = process_data(day, month, year, hour, alt,
-                                   directory='./../../../../../data/weather/twister/',
+                                   directory='./../../../../data/weather/twister/',
                                    convert_celcius_to_fahrenheit=True)
 
     key = '%i, %i' % (lat, lon)
@@ -38,28 +36,28 @@ if __name__ == '__main__':
     profile_altitudes, pressures = package_data(weather_data['pressure'])
     temperatures = convert_to_celcius(temperatures)
 
-    method, RMSE_method, bounds = choose_method(weather_data['humidity'])
-
-    print(method, RMSE_method)
-
+    # bounds = [p0, p1, m0, m1, b]
+    bounds = [[1.,4.], [0, 0.001], [-0.1,0.], [-0.1,0.], [8000,16000]]
     p_profile = ParametrizeHumidity(profile_altitudes, relative_humidities,
-                                    temperatures, pressures, bounds = bounds,
-                                    geometry_type = method)
+                                    temperatures, pressures, bounds=bounds,
+                                    geometry_type='spline')
 
     # Optimize profile
+    profile_types = ['vapor_pressures','relative_humidities']
+    profile_type = profile_types[1]
     fun = p_profile.RMSE
     bounds_normalized = [(0,1) for i in range(len(bounds))]
     res = differential_evolution(fun, bounds = bounds_normalized,
-                                 args = [RMSE_method], popsize = 100,
+                                 args = [profile_type], popsize = 100,
                                  updating = 'deferred', workers = 10)
 
     # Plot optimized profile
     x = p_profile.normalize_inputs(res.x)
     p_profile.geometry(x)
     p_profile.calculate_humidity_profile()
-    p_profile.RMSE(res.x, profile_type = RMSE_method)
-    # p_profile.plot()
-    p_profile.plot(profile_type = 'relative_humidities')
+    p_profile.RMSE(res.x, profile_type = profile_type, print_rmse = False)
+    p_profile.plot()
+    p_profile.plot(profile_type='relative_humidities')
     plt.show()
 
     # Calculate noise
@@ -67,7 +65,7 @@ if __name__ == '__main__':
     noise = {'original':0,'parametrized':0,'difference':0}
 
     # Noise calculations (original profile)
-    boom_runner_path = './../../../../../data/nearfield/25D_M16_RL5.p'
+    boom_runner_path = './../../../../data/nearfield/25D_M16_RL5.p'
     sBoom_data = prepare_weather_sBoom(data, index)
     noise['original'] = boom_runner(sBoom_data, height_to_ground,
                                     nearfield_file=boom_runner_path)

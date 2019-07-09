@@ -28,13 +28,15 @@ day = '18'
 month = '06'
 year = '2018'
 hour = '12'
-latitudes = np.linspace(13, 58, 10)  # 46
-longitudes = np.linspace(-144, -53, 14)  # 92
+# latitudes = np.linspace(13, 58, 10)  # 46
+latitudes = np.arange(13, 59, dtype='float')
+# longitudes = np.linspace(-144, -53, 14)  # 92
+longitudes = np.arange(-144, -52, dtype='float')
 alt_ft = 45000.
 alt = alt_ft * 0.3048
 
 nearfield_file = './../../../../data/nearfield/25D_M16_RL5.p'
-profile_type = 'vapor_pressures'
+profile_type = 'relative_humidities'
 geometry_type = 'spline_bump'
 if geometry_type == 'spline_log':
     bounds = [[0.5, 3], [0., 0.01], [-1., 1.], [-0.01, 0.], [6, 14], [0, 7]]
