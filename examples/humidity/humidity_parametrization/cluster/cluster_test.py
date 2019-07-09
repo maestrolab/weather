@@ -2,16 +2,18 @@ import pickle
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib import cm
 from scipy.interpolate import interp1d
 from sklearn.cluster import KMeans
 from sklearn.metrics import pairwise_distances_argmin_min
+from scipy.signal import savgol_filter
 
 from misc_humidity import package_data, prepare_standard_profiles
 from misc_cluster import predict_clusters, calculate_average_profile,\
-                         prepare_profiles_GMM, vapor_pressures_GMM
+    prepare_profiles_GMM, vapor_pressures_GMM
 
-# Load atmospheric data
-data = pickle.load(open('./../../../72469_profiles.p','rb'))
+# Load atmospheric data ./../../../72469_profiles.p
+data = pickle.load(open('./72469_noise.p', 'rb'))
 n = 200
 n_clusters = 4
 rh = np.array(data['humidity'])
@@ -21,131 +23,70 @@ alt_interpolated = np.linspace(0, 13500, n)
 data_interpolated = np.zeros((len(rh), len(alt_interpolated), 2))
 for i in range(m):
     alt, values = np.array(rh[i]).T
+    # values = savgol_filter(values, 11, 3)
     fun = interp1d(alt, values)
     values_interpolated = fun(alt_interpolated)
     data_interpolated[i] = np.array([alt_interpolated, values_interpolated]).T
 
 # metrics
+average = np.array([np.average(data_interpolated[i, :, 1]) for i in range(m)])
 
-average = np.array([np.average(data_interpolated[i,:,1]) for i in range(m)])
-average_profile = np.array([np.average(data_interpolated[0:m,j,1]) for j in range(n)])
-standard = np.array([np.average(np.absolute(data_interpolated[i,:,1]-average_profile)) for i in range(m)])
+maximum = np.array([np.max(data_interpolated[i, :, 1]) for i in range(m)])
+ground = data_interpolated[:, 0, 1]
+indices_of_maximum = [np.argmax(data_interpolated[i, :, 1]) for i in range(m)]
+location_of_maximum = data_interpolated[i, indices_of_maximum, 0]
+
+average_profile = np.array([np.average(data_interpolated[0:m, j, 1]) for j in range(n)])
+standard = np.array(
+    [np.average(np.absolute(data_interpolated[i, :, 1]-average_profile)) for i in range(m)])
 
 # Clustering time
-points = data_interpolated[:,:,1]
+points = data_interpolated[:, :, 1]
 kmeans = KMeans(n_clusters=n_clusters)
 kmeans.fit(points)
 y_km = kmeans.fit_predict(points)
+centers = kmeans.cluster_centers_
+centers = [np.average(centers[i]) for i in range(n_clusters)]
+print(centers)
+print(np.argsort(centers))
+indexes = np.arange(n_clusters)[np.argsort(centers)]
+colors = [[0, 0.4470, 0.7410],
+          [0.8500, 0.3250, 0.0980],
+          [0.9290, 0.6940, 0.1250],
+          [0.4940, 0.1840, 0.5560],
+          [0.4660, 0.6740, 0.1880],
+          [0.3010, 0.7450, 0.9330],
+          [0.6350, 0.0780, 0.1840]]
+
 
 plt.figure()
-plt.scatter(average, standard, c=y_km)
+s = plt.scatter(average, location_of_maximum, c=data['noise'], cmap='gray')
+plt.colorbar(s)
 
 plt.figure()
-colors = ['b', 'r']
-colors_interpolated = ['m', 'y']
+for i in range(n_clusters):
+    ii = np.where(indexes == i)[0][0]
+    plt.scatter(average[y_km == ii], np.array(data['noise'])[y_km == ii],
+                c=colors[ii], label=i)
+plt.legend()
 
+plt.figure()
+for i in range(n_clusters):
+    ii = np.where(indexes == i)[0][0]
+    plt.scatter(average[y_km == ii], location_of_maximum[y_km == ii],
+                c=colors[ii], label=i)
+plt.legend()
+
+plt.figure()
 data = [data_interpolated[y_km == i] for i in range(n_clusters)]
-average_plot = np.array([[np.average(data[i][:,:,1], axis = 0)] for i in range(n_clusters)])
+average_plot = np.array([[np.average(data[i][:, :, 1], axis=0)] for i in range(n_clusters)])
 
 for j in range(n_clusters):
-    plt.subplot(2,2,j+1)
-    data_i = data_interpolated[y_km == j]
+    jj = np.where(indexes == j)[0][0]
+    plt.subplot(2, 2, jj+1)
+    data_i = data_interpolated[y_km == jj]
     for i in range(n):
         x, y = data_i[i].T
-        plt.plot( y, x, j, alpha=0.2)
-    plt.plot(average_plot[j][0,:], data[j][0,:,0], color = 'k')
-plt.show()
-
-BREAK
-# Load model
-model = pickle.load(open('GMM_balloon_profiles_4.p','rb'))
-
-# Load standard profiles (need standard pressure profile)
-path = './../../../../../data/weather/standard_profiles/standard_profiles.p'
-standard_profiles = prepare_standard_profiles(standard_profiles_path = path)
-data['pressure'] = [standard_profiles['original_pressures'] for i in range(
-                    len(data['humidity']))]
-
-# Prepare data
-humidity_profiles = prepare_profiles_GMM(data['humidity'],
-                                         model['reference_profile'],
-                                         model['cruise_altitude'],
-                                         include_reference = False)
-temperature_profiles = prepare_profiles_GMM(data['temperature'],
-                                            model['reference_temperature'],
-                                            model['cruise_altitude'],
-                                            include_reference = False)
-pressure_profiles = prepare_profiles_GMM(data['pressure'],
-                                         model['reference_profile'],
-                                         model['cruise_altitude'],
-                                         include_reference = False)
-
-# Calculate vapor pressure profiless
-vps_profiles = vapor_pressures_GMM(humidity_profiles, temperature_profiles,
-                                   pressure_profiles)
-
-# Predict cluster for each profile in data (profiles signified by index in array)
-cluster_assignments = predict_clusters(humidity_profiles, model['model'])
-
-# Calculate the average profile for each cluster
-average_profile_per_cluster = calculate_average_profile(humidity_profiles,
-                                            cluster_assignments, model['model'])
-
-# Compute the average profile considering all profiles
-profiles_to_average = np.array(humidity_profiles)
-average_humidity_profile = np.mean(profiles_to_average, axis = 0)
-average_alts, average_rh = package_data(average_humidity_profile)
-
-profiles_to_average = np.array(vps_profiles)
-average_vps_profile = np.mean(profiles_to_average, axis = 0)
-average_alts, average_vps = package_data(average_vps_profile)
-
-# Computing the mean and standard deviation for each profile
-database = {i:{'mean':0, 'std':0, 'ave_std':0, 'color':''} for i in \
-                                                range(len(humidity_profiles))}
-colors = {0:'b', 1:'orange', 2:'g', 3:'r'}
-
-for i in range(len(humidity_profiles)):
-    alts, rh = package_data(humidity_profiles[i])
-    cluster = cluster_assignments[i]
-
-    df = pd.DataFrame({'rh':rh, 'ave_rh_cluster':\
-                      average_profile_per_cluster[cluster[0]]})
-    df_ave = pd.DataFrame({'rh':rh, 'ave_rh':average_rh})
-
-    database[i]['rh_mean'] = df.rh.mean()
-    database[i]['rh_std'] = df.rh.std()
-    database[i]['rh_ave_std'] = (df_ave.std(axis = 1)).mean()
-    database[i]['rh_ave_std_cluster'] = (df.std(axis = 1)).mean()
-
-    # Compute the mean and standard deviation for the vapor pressure profiles
-    alts, vps = package_data(vps_profiles[i])
-    df_vps = pd.DataFrame({'vps':vps, 'ave_vps':average_vps})
-
-    database[i]['vps_mean'] = df_vps.vps.mean()
-    database[i]['vps_ave_std'] = (df_vps.std(axis = 1)).mean()
-
-    database[i]['color'] = colors[cluster[0]]
-
-# Plot average vs standard deviation
-plots = ['rh_std', 'rh_ave_std', 'rh_ave_std_cluster']
-plots_mean = ['vps_mean']
-plots_std = ['vps_ave_std']
-for mean_type in plots_mean:
-    for std_type in plots_std:
-        cluster_counts = {i:0 for i in range(4)}
-        keys = database.keys()
-        fig = plt.figure()
-        for key in keys:
-            label = None
-            if cluster_counts[cluster_assignments[key][0]] == 0:
-                label = cluster_assignments[key][0]
-                cluster_counts[cluster_assignments[key][0]] += 1
-            plt.scatter(database[key][mean_type], database[key][std_type],
-                        color = database[key]['color'], alpha = 0.5,
-                        label = label)
-        plt.xlabel('$\mu_{vps}$')
-        plt.ylabel('$\sigma_{vps}$')
-        plt.legend(title = 'Cluster')
-
+        plt.plot(y, x, jj, color='k', alpha=0.05)
+    plt.plot(average_plot[jj][0, :], data[jj][0, :, 0], color=colors[jj])
 plt.show()

@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
 ################################################################################
+
+
 class SplineBumpHumidity:
     """  """
 
@@ -54,7 +56,10 @@ class SplineBumpHumidity:
 
         return output
 
+
 """Tools for creating parametric surface descriptions and meshes."""
+
+
 class HermiteSpline:
     """  """
 
@@ -85,6 +90,8 @@ class HermiteSpline:
         return output
 
 ################################################################################
+
+
 def calculate_vapor_pressures(humidities, temperatures, pressures):
     '''calculate_vapor_pressures calculates the saturation_vapor_pressures
     and the actual_vapor_pressures given a temperature and humidity
@@ -92,10 +99,10 @@ def calculate_vapor_pressures(humidities, temperatures, pressures):
     '''
     saturation_vps = []
     for i in range(len(temperatures)):
-        if temperatures[i]>=0:
+        if temperatures[i] >= 0:
             f = 1.0007+(3.46e-6*pressures[i])
             sat_vps = f*0.61121*np.exp(17.502*temperatures[i]/(240.97+temperatures[i]))
-        elif temperatures[i]>-50:
+        elif temperatures[i] > -50:
             f = 1.0003+(4.18e-6*pressures[i])
             sat_vps = f*0.61115*np.exp(22.452*temperatures[i]/(272.55+temperatures[i]))
         else:
@@ -105,9 +112,10 @@ def calculate_vapor_pressures(humidities, temperatures, pressures):
     actual_vps = [humidities[i]/100*saturation_vps[i] for i in range(len(humidities))]
     return actual_vps, saturation_vps
 
+
 def combine_profiles(data, day, month, year, hour, alt, profile_type='humidity',
-                     latitude={'min':13,'max':59},
-                     longitude={'min':-144,'max':-52},
+                     latitude={'min': 13, 'max': 59},
+                     longitude={'min': -144, 'max': -52},
                      path='../../data/weather/twister/day_combined/'):
     '''combine_profiles combines all profile data from a given day
         Inputs:
@@ -131,9 +139,10 @@ def combine_profiles(data, day, month, year, hour, alt, profile_type='humidity',
         hour = hour[:-1]
 
     path += '%s_%s_%s_%s_all_%s' % (year, month, day, hour, profile_type)
-    all_profiles_in_day = open(path + '.p','wb')
+    all_profiles_in_day = open(path + '.p', 'wb')
     pickle.dump(profiles, all_profiles_in_day)
     all_profiles_in_day.close()
+
 
 def convert_to_celcius(temperature_F):
     if type(temperature_F) == list:
@@ -141,37 +150,38 @@ def convert_to_celcius(temperature_F):
     temperature_C = (5/9)*(temperature_F-32)
     return temperature_C
 
+
 def package_data(data1, data2=None, method='unpack'):
     '''package_data packs or unpacks data in the form [[data1, data2]]'''
     if method == 'pack':
-        packed_data = [[data1[i],data2[i]] for i in range(len(data1))]
+        packed_data = [[data1[i], data2[i]] for i in range(len(data1))]
         return packed_data
     elif method == 'unpack':
         unpacked_data_1 = [d[0] for d in data1]
         unpacked_data_2 = [d[1] for d in data1]
         return unpacked_data_1, unpacked_data_2
 
-def prepare_standard_profiles(standard_profiles_path =
-'./../../../../data/weather/standard_profiles/standard_profiles.p'):
-       standard_profiles = pickle.load(open(standard_profiles_path,'rb'))
 
-       # Interpolate temperature values at altitudes in relative humidity profile
-       temperature_altitudes, temperatures = package_data(standard_profiles['temperature'])
-       rh_altitudes, rhs = package_data(standard_profiles['relative humidity'])
-       pressure_altitudes, pressures = package_data(standard_profiles['pressure'])
+def prepare_standard_profiles(standard_profiles_path='./../../../../data/weather/standard_profiles/standard_profiles.p'):
+    standard_profiles = pickle.load(open(standard_profiles_path, 'rb'))
 
-       standard_profiles['original_pressures'] = standard_profiles['pressure'][:]
-       standard_profiles['original_temperatures'] = standard_profiles['temperature'][:]
+    # Interpolate temperature values at altitudes in relative humidity profile
+    temperature_altitudes, temperatures = package_data(standard_profiles['temperature'])
+    rh_altitudes, rhs = package_data(standard_profiles['relative humidity'])
+    pressure_altitudes, pressures = package_data(standard_profiles['pressure'])
 
-       fun_temperature = interp1d(temperature_altitudes, temperatures)
-       fun_pressure = interp1d(pressure_altitudes, pressures)
+    standard_profiles['original_pressures'] = standard_profiles['pressure'][:]
+    standard_profiles['original_temperatures'] = standard_profiles['temperature'][:]
 
-       temperatures = fun_temperature(rh_altitudes)
-       pressures = fun_pressure(rh_altitudes)
+    fun_temperature = interp1d(temperature_altitudes, temperatures)
+    fun_pressure = interp1d(pressure_altitudes, pressures)
 
-       standard_profiles['temperature'] = package_data(rh_altitudes,
-                                                        temperatures, method='pack')
-       standard_profiles['pressure'] = package_data(rh_altitudes, pressures,
-                                                    method='pack')
+    temperatures = fun_temperature(rh_altitudes)
+    pressures = fun_pressure(rh_altitudes)
 
-       return standard_profiles
+    standard_profiles['temperature'] = package_data(rh_altitudes,
+                                                    temperatures, method='pack')
+    standard_profiles['pressure'] = package_data(rh_altitudes, pressures,
+                                                 method='pack')
+
+    return standard_profiles

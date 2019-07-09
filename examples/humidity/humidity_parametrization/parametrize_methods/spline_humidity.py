@@ -15,7 +15,7 @@ if __name__ == '__main__':
     day = '18'
     month = '06'
     year = '2018'
-    hour = '12_'
+    hour = '12'
     lat = 52
     lon = -80
     alt_ft = 45000.
