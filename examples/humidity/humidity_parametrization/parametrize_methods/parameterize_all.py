@@ -27,9 +27,9 @@ def refine_profiles(data, keys, altitudes):
 day = '18'
 month = '06'
 year = '2018'
-hour = '12'
+hour = '12_'
 # latitudes = np.linspace(13, 58, 10)  # 46
-latitudes = np.arange(13, 59, dtype='float')
+latitudes = np.arange(55, 56, dtype='float')
 # longitudes = np.linspace(-144, -53, 14)  # 92
 longitudes = np.arange(-144, -52, dtype='float')
 alt_ft = 45000.
@@ -46,7 +46,7 @@ elif geometry_type == 'spline_bump_log':
     bounds = [[0.5, 3.], [0., 0.5], [-0.1, 0.], [0., 0.], [-0.1, 0.], [7, 10],
               [0., 0.5], [0, 7], [8, 12]]
 elif geometry_type == 'spline_bump':
-    bounds = [[0.5, 3.], [0., 0.5], [-0.1, 0.], [0., 0.], [-0.1, 0.], [2000, 12000],
+    bounds = [[0.5, 3.], [0., 0.5], [-0.1, 0.], [0., 0.], [-2.0095108695652176e-05, -2.0095108695652176e-05], [2000, 12000],
               [0., 0.5], [8000, 18000]]
 n_altitude = 20
 
@@ -54,8 +54,10 @@ n_altitude = 20
 data, altitudes = process_data(day, month, year, hour, alt,
                                directory='./../../../../data/weather/twister/',
                                convert_celcius_to_fahrenheit=True)
-print(list(data.keys())[0], list(data.keys())[-1])
-f = open('error.txt', 'w')
+# print(list(data.keys())[0], list(data.keys())[-1]) # Here to determine max and min lat and lon (i.e. not needed to run; just here for first run to set latitudes and longitudes)
+filepath = 'all_parametrize_twister/txt_files/5_0_params_error_[%i,%i]_[%i,%i].txt' % \
+                    (latitudes[0], longitudes[0], latitudes[-1], longitudes[-1])
+f = open(filepath, 'w')
 for lat in latitudes:
     for lon in longitudes:
         key = '%i, %i' % (lat, lon)
@@ -101,7 +103,12 @@ for lat in latitudes:
                                             nearfield_file=nearfield_file)
         noise['difference'] = noise['original'] - noise['parametrized']
         print(lat, lon, noise['difference'])
-        f.write('%f\t%f\t%f\t%f\t%f\n' % (lat, lon, noise['original'],
-                                          noise['parametrized'],
-                                          noise['difference']))
+        f.write('%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n'
+                                                            % (lat, lon,
+                                                            noise['original'],
+                                                            noise['parametrized'],
+                                                            noise['difference'],
+                                                            x[0], x[1], x[2],
+                                                            x[3], x[4], x[5],
+                                                            x[6], x[7]))
 f.close()

@@ -1,122 +1,124 @@
 import numpy as np
-from keras.layers import Input, Dense
-from keras.models import Model
-import os
+from scipy.interpolate import interp1d
 
-class Autoencoder:
-    '''Notes: (change later)
+from misc_humidity import calculate_vapor_pressures
 
-        Inputs:
-         - data: input data for model to train
-                 foramt: np.array([np.array([])])
-                 shape: data.shape = (n_sets_of_data, n_data_points)
-                        data[i] = (n_data_points,); for i in range(len(n_sets_of_data))
-         - encoding_dims: list of encoder layer dimensions in ascending order
-    '''
+def interpolate_profiles(altitudes, humidity, temperature, pressure = np.array([])):
+    rh_interpolated = np.zeros((len(humidity), len(altitudes), 2))
+    temp_interpolated = np.zeros((len(temperature), len(altitudes), 2))
+    for i in range(len(humidity)):
+        alt_, rh_vals = np.array(humidity[i]).T
+        alt, temp_vals = np.array(temperature[i]).T
 
-    def __init__(self, data, encoding_dims = [10]):
-        self.data = np.array(data)
-        self.encoding_dims = encoding_dims
-        self._input_shape = self.data[0].shape
+        # FIX TO WORK FOR ANY SET OF PROFILES!!!!!!
+        if len(rh_vals) != len(temp_vals):
+            if len(alt) > len(alt_):
+                alt = alt_[:]
+                temp_vals = temp_vals[1:]
+            else:
+                rh_vals = rh_vals[:-1]
 
-    def _prepare_validation_data(self):
-        '''Divide data for training and validation'''
-        if len(self.data)%2 == 0:
-            index = int(len(self.data)/2)
+        rh_fun = interp1d(alt, rh_vals)
+        temp_fun = interp1d(alt, temp_vals)
+        rh_interpolated_values = rh_fun(altitudes)
+        temp_interpolated_values = temp_fun(altitudes)
+        rh_interpolated[i] = np.array([altitudes, rh_interpolated_values]).T
+        temp_interpolated[i] = np.array([altitudes, temp_interpolated_values]).T
+
+    if pressure.any():
+        # Interpolate pressure profile
+        alt, pres_vals = pressure.T
+        pres_fun = interp1d(alt, pres_vals)
+        pres_interpolated_values = pres_fun(altitudes)
+        pres_interpolated = np.array([altitudes, pres_interpolated_values]).T
+
+        return rh_interpolated, temp_interpolated, pres_interpolated
+    else:
+        return rh_interpolated, temp_interpolated
+
+def normalize_inputs(x, bounds, inverse = False):
+    if inverse:
+        normalized_inputs = (bounds[1]-bounds[0])*x+bounds[0]
+    else:
+        normalized_inputs = (x-bounds[0])/(bounds[1]-bounds[0])
+    return normalized_inputs
+
+def define_bounds(profiles, type = ['min','max']):
+    bounds = np.zeros((len(profiles), 2))
+    for i in range(len(profiles)):
+        lb, ub = [np.min(profiles[i]), np.max(profiles[i])]
+        bounds[i] = [lb, ub]
+        types = {'constant_min':0, 'constant_max':100,
+                 'min':bounds[i][0], 'max':bounds[i][1]}
+        bounds[i] = [types[type[0]], types[type[1]]]
+
+    return bounds
+
+def normalize_inputs_temp_append(x, n, bounds, inverse = False):
+    if inverse:
+        norm1 = (bounds[0][1]-bounds[0][0])*x[:n]+bounds[0][0]
+        norm2 = (bounds[1][1]-bounds[1][0])*x[n:]+bounds[1][0]
+    else:
+        norm1 = (x[:n]-bounds[0][0])/(bounds[0][1]-bounds[0][0])
+        norm2 = (x[n:]-bounds[1][0])/(bounds[1][1]-bounds[1][0])
+    normalized_inputs = np.append(norm1, norm2)
+    return normalized_inputs
+
+def define_bounds_temp_append(profiles, n, type = [['min','max'],['min','max']]):
+    bounds = np.zeros((len(profiles), 2, 2))
+    for i in range(len(profiles)):
+        lb_rh, ub_rh = [np.min(profiles[i][:n]), np.max(profiles[i][:n])]
+        lb_t, ub_t = [np.min(profiles[i][n:]), np.max(profiles[i][n:])]
+        bounds[i][0] = [lb_rh, ub_rh]
+        bounds[i][1] = [lb_t, ub_t]
+        rh_types = {'constant_min':0, 'constant_max':100,
+                    'min':bounds[i][0][0], 'max':bounds[i][0][1]}
+        temp_types = {'constant_min':-78, 'constant_max':62,
+                      'min':bounds[i][1][0], 'max':bounds[i][1][1]}
+        bounds[i][0] = [rh_types[type[0][0]], rh_types[type[0][1]]]
+        bounds[i][1] = [temp_types[type[1][0]], temp_types[type[1][1]]]
+
+    return bounds
+
+def bounds_check(profiles, bounds):
+    i = 0
+    while i != len(profiles):
+        if bounds[i][0][0] == bounds[i][0][1]:
+            profiles = np.delete(profiles, i, 0)
+            bounds = np.delete(bounds, i, 0)
         else:
-            index = int(np.around(len(self.data)/2))
+            i += 1
 
-        training_data = self.data[:index]
-        validation_data = self.data[index:]
+    return profiles, bounds
 
-        self.training_data = self._normalize_parameters(training_data)
-        self.validation_data = self._normalize_parameters(validation_data)
 
-    def _encoder(self, activation):
-        self.encoder_input = Input(shape = self._input_shape)
-        encoded = Dense(self.encoding_dims[0], activation = activation)(self.encoder_input)
-        if len(self.encoding_dims) > 1:
-            for layer_dim in self.encoding_dims[-1:0:-1]:
-                encoded = Dense(layer_dim, activation = activation)(encoded)
-        self.encoder_output = encoded
-        self.encoder = Model(self.encoder_input, self.encoder_output)
+def prepare_vapor_pressures(altitudes, humidity, temperature, pressure):
+    vps_profiles = np.zeros((len(humidity), len(altitudes), 2))
+    sat_vps_profiles = np.zeros((len(humidity), len(altitudes), 2))
+    for i in range(len(humidity)):
+        vps, sat_vps = calculate_vapor_pressures(humidity[i][:,1],
+                                                 temperature[i][:,1],
+                                                 pressure[:,1])
+        vps_profiles[i] = np.array([altitudes, vps]).T
+        sat_vps_profiles[i] = np.array([altitudes, sat_vps]).T
 
-    def _decoder(self, activation):
-        self.decoder_input = Input(shape = (min(self.encoding_dims),))
-        if len(self.encoding_dims) > 1:
-            decoded = Dense(self.encoding_dims[1], activation = activation)(self.decoder_input)
-            for layer_dim in self.encoding_dims[2:-1]:
-                decoded = Dense(layer_dim, activation = activation)(decoded)
-        else:
-            decoded = self.decoder_input
-        self.decoder_output = Dense(self._input_shape[0], activation = activation)(decoded)
-        self.decoder = Model(self.decoder_input, self.decoder_output)
+    return vps_profiles, sat_vps_profiles
 
-    def init_model(self, activation = 'relu'):
-        self._encoder(activation = activation)
-        self._decoder(activation = activation)
-
-        # Need to generalize for muliple hidden layers
-        input = Input(shape = self._input_shape)
-        encoded = self.encoder(input)
-        decoded = self.decoder(encoded)
-
-        self.autoencoder = Model(input, decoded)
-
-    '''Import normalize_list and normalize_parameters'''
-    def _normalize_list(self, inputs, bounds, inverse):
-        outputs = np.zeros(len(inputs))
-        if inverse:
-            for i in range(len(inputs)):
-                outputs[i] = inputs[i]*(bounds[i][1]-bounds[i][0]) + bounds[i][0]
-        else:
-            for i in range(len(inputs)):
-                outputs[i] = (inputs[i]-bounds[i][0])/(bounds[i][1]-bounds[i][0])
-        return outputs
-
-    def _normalize_parameters(self, data, bounds = None, inverse = False):
-        normalized_data = list(np.zeros(len(data)))
-        for i in range(len(data)):
-            if bounds == None:
-                bounds = [[min(data[i]),max(data[i])] for j in range(len(data[i]))]
-            normalized_list = self._normalize_list(data[i], bounds = bounds,
-                                                   inverse = inverse)
-            normalized_data[i] = list(normalized_list)
-        return np.array(normalized_data)
-
-    def train(self, batch_size = 10, epochs = 25):
-        self.autoencoder.compile(optimizer = 'adadelta',
-                                 loss = 'binary_crossentropy')
-        self._prepare_validation_data()
-        self.autoencoder.fit(self.training_data, self.training_data,
-                             epochs = epochs,
-                             batch_size = batch_size,
-                             validation_data = (self.validation_data,
-                                                self.validation_data))
-
-    def __call__(self, parameter):
-        # Include an option to save the data
-        encoder_input = self._normalize_parameters(parameter)
-        encoded = self.encoder.predict(encoder_input)
-        decoded = self.decoder.predict(encoded)
-        bounds = [[min(parameter[0]),max(parameter[0])] for j in range(len(parameter[0]))]
-        decoded = self._normalize_parameters(decoded, bounds = bounds, inverse = True)
-        print('Input: %s\nEncoded: %s\nDecoded: %s' % (parameter[0], encoded, decoded))
-
-        return decoded
-
-    def save_model(self):
-        # make directory specific to model
-        # save autoencoder, encoder, and decoder all separately in directory
-        pass
-
-if __name__ == '__main__':
-    # import pickle
-    # data = pickle.load(open('2018_06_18_12_all_temperature.p','rb'))
-    # data = np.array([np.array(data[i]) for i in range(len(data))])
-    x = np.random.randint(10,size=(100,10))
-    auto = Autoencoder(data = x, encoding_dims = [3])
-    auto.init_model()
-    auto.train(batch_size=20, epochs=50)
-    parameter = np.array([np.array([3,5,7,1,3,3,9,8,1,2])])
-    result = auto(parameter = parameter)
+# alt_interpolated = np.linspace(0,13500,n)
+# rh_interpolated = np.zeros((len(rh), len(alt_interpolated), 2))
+# temp_interpolated = np.zeros((len(rh), len(alt_interpolated), 2))
+# for i in range(len(rh)):
+#     alt, rh_vals = np.array(rh[i]).T
+#     alt, temp_vals = np.array(temp[i]).T
+#     rh_fun = interp1d(alt, rh_vals)
+#     temp_fun = interp1d(alt, temp_vals)
+#     rh_interpolated_values = rh_fun(alt_interpolated)
+#     temp_interpolated_values = temp_fun(alt_interpolated)
+#     rh_interpolated[i] = np.array([alt_interpolated, rh_interpolated_values]).T
+#     temp_interpolated[i] = np.array([alt_interpolated, temp_interpolated_values]).T
+#
+# # Interpolate pressure profile
+# alt, pres_vals = pres.T
+# pres_fun = interp1d(alt, pres_vals)
+# pres_interpolated_values = pres_fun(alt_interpolated)
+# pres_interpolated = np.array([alt_interpolated, pres_interpolated_values]).T

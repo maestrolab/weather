@@ -28,7 +28,7 @@ day = '18'
 month = '06'
 year = '2018'
 hour = '12_'
-lat = 52
+lat = 32
 lon = -80
 alt_ft = 45000.
 alt = alt_ft * 0.3048
@@ -46,7 +46,9 @@ elif geometry_type == 'spline_bump_log':
 elif geometry_type == 'spline_bump':
     bounds = [[0.5, 3.], [0., 0.5], [-0.1, 0.], [0., 0.], [-0.1, 0.], [2000, 12000],
               [0., 0.5], [8000, 18000]]
-n_altitude = 100
+    bounds = [[0.5, 3.], [0., 0.5], [-0.1, 0.], [0., 0.], [-2.0095108695652176e-05, -2.0095108695652176e-05], [2000, 12000],
+              [0., 0.5], [8000, 18000]]
+n_altitude = 20
 
 # Extract data
 data, altitudes = process_data(day, month, year, hour, alt,
@@ -69,21 +71,7 @@ relative_humidities, temperatures, pressures = output
 p_profile = ParametrizeHumidity(refined_altitudes, relative_humidities,
                                 convert_to_celcius(temperatures), pressures, bounds=bounds,
                                 geometry_type=geometry_type)
-# plt.figure()
-# plt.plot(p_profile.vps, refined_altitudes, label='old')
-# plt.plot(np.exp(-p_profile.vps), refined_altitudes, label='new')
-# plt.plot(np.exp(p_profile.vps), refined_altitudes, label='new1')
-# plt.plot(-np.log(p_profile.vps), refined_altitudes, label='new3')
-# plt.plot(np.log(-p_profile.vps), refined_altitudes, label='new4')
-# plt.legend()
-# plt.show()
 
-# plt.figure()
-# plt.plot(p_profile.vps, max(p_profile.vps)*np.exp(-refined_altitudes/height_to_ground), label='new')
-# print(np.exp(-refined_altitudes))
-# plt.legend()
-# plt.show()
-# BREAK
 # Optimize profile
 fun = p_profile.RMSE
 bounds_normalized = [(0, 1) for i in range(len(bounds))]
