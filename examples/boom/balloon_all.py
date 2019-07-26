@@ -1,18 +1,19 @@
 from weather.scraper.balloon import balloon_scraper, process_data
 from weather.filehandling import output_reader
+from weather.boom import boom_runner
 import numpy as np
 import pickle
 
 YEAR = '2018'
 MONTH = '06'
 DAY = '18'
-HOUR = '00'
+HOUR = '12'
 altitude = 50000
 directory = './'
 locations = ['72469']  # Corresponds to Fort Worth/Dallas
 n_days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 all_data = {'temperature': [], 'humidity': [], 'wind': [], 'month': [],
-            'day': [], 'noise': [], 'height': []}
+            'day': [], 'noise': [], 'height': [], 'year':[]}
 log = open('log.txt', 'w')
 
 years = ['2015','2016','2017','2018']
@@ -47,11 +48,15 @@ for year in years:
 
                     [temperature, wind, humidity] = sBoom_data
 
-                    print(month, day)
+                    noise = boom_runner(sBoom_data, height_to_ground,
+                                    nearfield_file='../../data/nearfield/25D_M16_RL5.p')
+                    print(year, month, day)
                     all_data['temperature'].append(temperature)
                     all_data['humidity'].append(humidity)
                     all_data['wind'].append(wind)
                     all_data['height'].append(data['height'])
+                    all_data['noise'].append(noise)
+                    all_data['year'].append(year)
                     all_data['month'].append(month)
                     all_data['day'].append(day)
                 else:
@@ -62,6 +67,6 @@ for year in years:
                 log.write(YEAR + ', ' + MONTH + ', ' + DAY + '\n')
 
 log.close()
-f = open(locations[0] + '_profiles' + '.p', 'wb')
+f = open(locations[0] + '_noise' + '.p', 'wb')
 pickle.dump(all_data, f)
 f.close()

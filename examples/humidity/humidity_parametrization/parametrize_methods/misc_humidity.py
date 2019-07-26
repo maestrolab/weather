@@ -151,17 +151,6 @@ def convert_to_celcius(temperature_F):
     return temperature_C
 
 
-def package_data(data1, data2=None, method='unpack'):
-    '''package_data packs or unpacks data in the form [[data1, data2]]'''
-    if method == 'pack':
-        packed_data = [[data1[i], data2[i]] for i in range(len(data1))]
-        return packed_data
-    elif method == 'unpack':
-        unpacked_data_1 = [d[0] for d in data1]
-        unpacked_data_2 = [d[1] for d in data1]
-        return unpacked_data_1, unpacked_data_2
-
-
 def prepare_standard_profiles(standard_profiles_path='./../../../../data/weather/standard_profiles/standard_profiles.p'):
     standard_profiles = pickle.load(open(standard_profiles_path, 'rb'))
 
