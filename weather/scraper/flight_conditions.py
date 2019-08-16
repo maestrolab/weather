@@ -212,9 +212,9 @@ class Airframe(object):
 
         plt.figure()
         plt.contourf(X, Y, Z)
-        plt.xlabel('Approximated Angle of Attack [degrees]')
-        plt.ylabel('Velocity [m/s]')
-        plt.colorbar()
+        plt.xlabel(r'Angle of Attack ($^{\circ}$)')
+        plt.ylabel('Velocity (m/s)')
+        plt.colorbar(label='Probability')
         plt.show()
 
     def retrieve_data(self, load_data=False):

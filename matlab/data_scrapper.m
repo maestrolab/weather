@@ -1,8 +1,9 @@
 clc; clear; close all; echo off;
+% run setup_nctoolbox.m before anything
 %% Dataset Inputs
 yr = '2018';              %year
 mo = '12';                %month
-day = '21';               %Day
+day = '24';               %Day
 hr = '1200';              %Valid values: '0000', '0600', '1200', '1800'
 
 min_lat = 13;

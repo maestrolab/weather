@@ -30,7 +30,7 @@ def boom_runner(data, altitude_feet,
     nearfield_sig = pickle.load(open(nearfield_file, "rb"))
 
     # initialize sBOOM
-    sboom = SboomWrapper(CASE_DIR, exe="sboom_windows.dat.allow")
+    sboom = SboomWrapper(CASE_DIR, exe="sboomadjoint_Windows_v2.80_Fri_July_19_10_04_59_2019.dat")
 
     # change mach_number for each iteration based on wind
     mach = MACH  # MachModifier(DIRECTION, MACH, ALT, wind)

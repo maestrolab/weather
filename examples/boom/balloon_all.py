@@ -1,12 +1,13 @@
 from weather.scraper.balloon import balloon_scraper, process_data
 from weather.filehandling import output_reader
+from weather.boom import boom_runner
 import numpy as np
 import pickle
 
 YEAR = '2018'
 MONTH = '06'
 DAY = '18'
-HOUR = '00'
+HOUR = '12'
 altitude = 50000
 directory = './'
 locations = ['71600', '71603', '71722', '71815', '72202', '72206', '72208',
@@ -21,8 +22,8 @@ locations = ['71600', '71603', '71722', '71815', '72202', '72206', '72208',
              '72764', '72768', '72776', '72786', '72797', '74389', '74455',
              '74494', '74560', '74646', '74794', '78016', '78073']
 n_days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-# all_data = {'temperature': [], 'humidity': [], 'wind': [], 'month': [],
-            # 'day': [], 'noise': [], 'height': []}
+all_data = {'temperature': [], 'humidity': [], 'wind': [], 'month': [],
+            'day': [], 'noise': [], 'height': [], 'year':[]}
 log = open('log.txt', 'w')
 
 years = ['2000','2001','2002','2003','2004','2005','2006','2007','2008',
@@ -49,37 +50,19 @@ for location in locations:
                     balloon_scraper(YEAR, MONTH, DAY, HOUR, directory, save=True,
                                     locations=[location], filename=filename)
 
-                    data = output_reader(filename, header=['latitude', 'longitude',
-                                                           'pressure', 'height',
-                                                           'temperature', 'dew_point',
-                                                           'humidity', 'mixr',
-                                                           'wind_direction',
-                                                           'wind_speed',
-                                                           'THTA', 'THTE', 'THTV'],
-                                         separator=',')
-                    if max(np.array(data['height'])-data['height'][0]) > altitude * 0.3048:
-                        sBoom_data, height_to_ground = process_data(data, altitude,
-                                                                    directory='../data/weather/',
-                                                                    outputs_of_interest=['temperature', 'height',
-                                                                                         'humidity', 'wind_speed',
-                                                                                         'wind_direction',
-                                                                                         'latitude', 'longitude'],
-                                                                    convert_celcius_to_fahrenheit=True)
-
-                        [temperature, wind, humidity] = sBoom_data
-
-                        print(month, day)
-                        all_data['temperature'].append(temperature)
-                        all_data['humidity'].append(humidity)
-                        all_data['wind'].append(wind)
-                        all_data['height'].append(data['height'])
-                        all_data['month'].append(month)
-                        all_data['day'].append(day)
-                    else:
-                        print('Not enough data')
-                        log.write(YEAR + ', ' + MONTH + ', ' + DAY + '\n')
-                except(IndexError, ValueError) as e:
-                    print('Empty data')
+                    noise = boom_runner(sBoom_data, height_to_ground,
+                                    nearfield_file='../../data/nearfield/25D_M16_RL5.p')
+                    print(year, month, day)
+                    all_data['temperature'].append(temperature)
+                    all_data['humidity'].append(humidity)
+                    all_data['wind'].append(wind)
+                    all_data['height'].append(data['height'])
+                    all_data['noise'].append(noise)
+                    all_data['year'].append(year)
+                    all_data['month'].append(month)
+                    all_data['day'].append(day)
+                else:
+                    print('Not enough data')
                     log.write(YEAR + ', ' + MONTH + ', ' + DAY + '\n')
 
         year_name = '%s_%s' % (location, YEAR)
@@ -88,7 +71,6 @@ for location in locations:
         f.close()
 
 log.close()
-# year_span = '_%i-%i' % (years[0], years[-1])
-# f = open(locations[0] + year_span + '.p', 'wb')
-# pickle.dump(all_data, f)
-# f.close()
+f = open(locations[0] + '_noise' + '.p', 'wb')
+pickle.dump(all_data, f)
+f.close()
