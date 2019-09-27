@@ -122,7 +122,7 @@ class ParametrizeHumidity:
         return self.rmse
 
     def plot(self, profile_type='vapor_pressures'):
-        fig = plt.figure()
+        # fig = plt.figure()
         if profile_type == 'vapor_pressures':
             plt.plot(self.vps, self.alts, label='Original')
             plt.scatter(self.vps, self.alts, label='Original')
