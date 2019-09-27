@@ -12,6 +12,14 @@ from misc_humidity import package_data, prepare_standard_profiles
 from misc_cluster import predict_clusters, calculate_average_profile,\
     prepare_profiles_GMM, vapor_pressures_GMM
 
+colors = [[0, 0.4470, 0.7410],
+          [0.8500, 0.3250, 0.0980],
+          [0.9290, 0.6940, 0.1250],
+          [0.4940, 0.1840, 0.5560],
+          [0.4660, 0.6740, 0.1880],
+          [0.3010, 0.7450, 0.9330],
+          [0.6350, 0.0780, 0.1840]]
+
 # Load atmospheric data ./../../../72469_profiles.p
 data = pickle.load(open('./72469_noise.p', 'rb'))
 n = 200
@@ -50,13 +58,8 @@ centers = [np.average(centers[i]) for i in range(n_clusters)]
 print(centers)
 print(np.argsort(centers))
 indexes = np.arange(n_clusters)[np.argsort(centers)]
-colors = [[0, 0.4470, 0.7410],
-          [0.8500, 0.3250, 0.0980],
-          [0.9290, 0.6940, 0.1250],
-          [0.4940, 0.1840, 0.5560],
-          [0.4660, 0.6740, 0.1880],
-          [0.3010, 0.7450, 0.9330],
-          [0.6350, 0.0780, 0.1840]]
+print(indexes)
+print(np.array(colors)[indexes])
 
 
 plt.figure()
@@ -64,25 +67,42 @@ s = plt.scatter(average, location_of_maximum, c=data['noise'], cmap='gray')
 plt.colorbar(s)
 
 plt.figure()
-for i in range(n_clusters):
-    ii = np.where(indexes == i)[0][0]
+for ii in indexes:
     plt.scatter(average[y_km == ii], np.array(data['noise'])[y_km == ii],
-                c=colors[ii], label=i)
-plt.legend()
+                c=colors[ii], label=ii)
+# plt.legend()
 
 plt.figure()
-for i in range(n_clusters):
-    ii = np.where(indexes == i)[0][0]
+for ii in indexes:
+    plt.scatter(average[y_km == ii], maximum[y_km == ii],
+                c=colors[ii], label=ii)
+
+plt.figure()
+for ii in indexes:
     plt.scatter(average[y_km == ii], location_of_maximum[y_km == ii],
-                c=colors[ii], label=i)
-plt.legend()
+                c=colors[ii], label=ii)
+                
+plt.figure()
+for ii in indexes:
+    plt.scatter(location_of_maximum[y_km == ii], np.array(data['noise'])[y_km == ii],
+                c=colors[ii], label=ii)
+
+plt.figure()
+for ii in indexes:
+    plt.scatter(average[y_km == ii], np.array(data['noise'])[y_km == ii],
+                c=colors[ii], label=ii)
+
+plt.figure()
+for ii in indexes:
+    plt.scatter(maximum[y_km == ii], np.array(data['noise'])[y_km == ii],
+                c=colors[ii], label=ii)
+# plt.legend()
 
 plt.figure()
 data = [data_interpolated[y_km == i] for i in range(n_clusters)]
 average_plot = np.array([[np.average(data[i][:, :, 1], axis=0)] for i in range(n_clusters)])
 
-for j in range(n_clusters):
-    jj = np.where(indexes == j)[0][0]
+for jj in indexes:
     plt.subplot(2, 2, jj+1)
     data_i = data_interpolated[y_km == jj]
     for i in range(n):
