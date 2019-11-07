@@ -1,13 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# path = 'validation_data/noise/'
-# path = 'multi-year_vs_single_year/noise/'
-path = 'constant_min_max/noise/'
-n_params = [5]
+
+path = 'noise/'
+n_params = [4]
 dim = 2500
 
-locations = ['72562','72214','72645','72582','72672']
+filename = '%i_params_%s' % (n_params[0], 'variable_rh_temp_3_latent_0_1000')
 
 # Compute the mean difference in PLdB and the max and min PLdB for each model
 pldb = {n:{} for n in n_params}
@@ -15,9 +14,6 @@ average = np.zeros(len(n_params))
 std = np.zeros(len(n_params))
 
 for i in range(len(n_params)):
-    filename = '%i_params_' % (n_params[i]) + '_'.join(locations)
-    # filename = '%i_params_1_trained_data' % n_params[0]
-    # filename = '%i_params_elevation_bound_0_trained_data' % n_params[0]
     f = open(path + filename + '.txt', 'r')
     lines = f.readlines()
     pldb[n_params[i]]['profile'] = np.zeros(len(lines))

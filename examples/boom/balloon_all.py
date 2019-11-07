@@ -61,7 +61,7 @@ for location in locations:
                     all_data['year'].append(year)
                     all_data['month'].append(month)
                     all_data['day'].append(day)
-                else:
+                except:
                     print('Not enough data')
                     log.write(YEAR + ', ' + MONTH + ', ' + DAY + '\n')
 
