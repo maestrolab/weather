@@ -1,0 +1,49 @@
+Purpose:
+    This text file provides descriptions for the three models available for use
+    in the task of reconstructing/building atmospheric profiles.
+
+Available Models:
+    1. 3_parameters
+    2. 4_parameters
+    3. 5_parameters
+
+Model Descriptions:
+    1. 3_parameters
+        - 3 latent space variables (__ is set to 0)
+        - elevation at ground
+    2. 4_parameters
+        - 4 latent space variables (__ is set to 0)
+        - elevation at ground
+    3. 5_parameters
+        - 4 latent space variables
+        - elevation at ground
+
+Using the Models:
+    - Each model has an autoencoder, encoder, and decoder that can be used
+      independently.
+    - Autoencoder:
+        The autoencoder can be used to reconstruct the input profiles.
+    - Encoder:
+        The encoder can be used to represent an input profile in the latent
+        space.
+    - Decoder:
+        The decoder can be used to build a profile from the latent space
+        representation.
+
+Inputs/Outputs:
+    - Autoencoder:
+    - Encoder:
+    - Decoder:
+        Inputs: latent space variables (either 2, 3, or 4 variables depending on
+                the chosen model)
+        Outputs: the normalized representation of the atmospheric profile data
+                 - array length is 151:
+                     - indices 0 to 75: relative humidity profile
+                     - indices 75 to 150: temperature profile
+                     - index 151: elevation at ground (DO NOT USE THIS VALUE)
+
+Preprocessing:
+     -
+
+Postprocessing:
+     -

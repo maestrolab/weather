@@ -17,7 +17,7 @@ min_RH = 'constant_min'
 max_RH = 'max'
 min_temp = 'min'
 max_temp = 'max'
-constant_type = 'variable_rh_temp_3_latent_0'
+constant_type = 'test'
 
 variable_bounds_handle = 'feature_bounds'
 variable_type = 'both'

@@ -10,7 +10,7 @@ from weather.boom import boom_runner
 ################################################################################
 #                               Load model
 ################################################################################
-n_params = 5
+n_params = 4
 
 min_RH = 'constant_min'
 max_RH = 'max'
@@ -18,8 +18,8 @@ min_temp = 'min'
 max_temp = 'max'
 
 # RUN WITH CONSTANT_TYPE = '5_params_varaible_rh_temp_profiles_2'
-ASDFA
-constant_type = 'variable_rh_temp_2'
+# ASDFA
+constant_type = 'test' # 'variable_rh_temp_2'
 variable_type = 'both' # overwrites the min and max choices above
 path = 'trained_models/%i_params_%s_' % (n_params, constant_type)
 
@@ -30,7 +30,7 @@ variable_bounds = pickle.load(open('feature_bounds.p','rb'))
 
 run = '_1000'
 profiles_name = 'profiles' + run
-constant_type += run
+constant_type += run + 'test'
 ################################################################################
 #                           Load profile data
 ################################################################################

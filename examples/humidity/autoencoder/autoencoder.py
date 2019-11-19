@@ -158,7 +158,7 @@ def outliers(relative_humidities, temperatures, elevations, max_alt = 5000,
 ################################################################################
 #                  Normalize inputs (using varying bounds)
 ################################################################################
-def normalize_variable_bounds(x, n, bounds, variable_bounds, type,
+def normalize_variable_bounds(x, n, variable_bounds, type, bounds = None
                               elevation_at_ground = np.array([]), inverse = False):
     if type == 'temp':
 
