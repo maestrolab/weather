@@ -74,8 +74,8 @@ humidity = np.array([np.array([altitudes, humidity_profiles[i]]).T for i in
 temperature = np.array([np.array([altitudes, temperature_profiles[i]]).T for i in
 					 range(len(latent_space))])
 
-weather_data = {"humidity":humidity[index], "wind_x":[[0, 0]], "wind_y":[[0,0]],
-                "temperature":temperature[index]}
+weather_data = {"humidity":list(humidity[index]),
+                "temperature":list(temperature[index])}
 
 height_to_ground = latent_space[index,-1] / 0.3048 # feet
 
