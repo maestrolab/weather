@@ -3,15 +3,21 @@ from weather.boom import read_input
 from weather.scraper.twister import process_data
 import platform
 
+import os
 import pickle
 import numpy as np
 import tensorflow as tf
 from autoencoder import *
 
-# Input parameters
-variable_file = "test_file"
 
-cruise_alt = 13500 # meters
+# import tensorflow.python.util.deprecation as deprecation
+# deprecation._PRINT_DEPRECATION_WARNINGS = False
+
+# Input parameters
+#variable_file = "test_file"
+variable_file = "../axie_bump_atmsophere_inputs1"
+
+cruise_alt = 45000 * 0.3048 # meters
 index = 0 # profile index from text file
 
 ################################################################################
@@ -22,11 +28,31 @@ f = open(variable_file + ".txt","r")
 lines = f.readlines()
 f.close()
 
+
 latent_space = np.array([lines[0].split()]).astype("float")
 for line in lines[1:]:
 	variable_list = np.array([line.split()])
 	variable_list = variable_list.astype("float")
 	latent_space = np.vstack((latent_space, variable_list))
+
+# map normalized parameters back to true latent variables (using 99% max/min)
+par_num = len(latent_space[0]) # how many parameters are there?
+for i in range(len(latent_space)):
+	if par_num==3:
+		latent_space[i][0] = latent_space[i][0]*(9.525)
+		latent_space[i][1] = latent_space[i][1]*(8.341)
+		latent_space[i][2] = latent_space[i][2]*(5331-10)+10
+	elif par_num==4:
+		latent_space[i][0] = latent_space[i][0]*(8.952)
+		latent_space[i][1] = latent_space[i][1]*(9.189)
+		latent_space[i][2] = latent_space[i][2]*(8.849)
+		latent_space[i][3] = latent_space[i][3]*(5331-10)+10
+	elif par_num==5:
+		latent_space[i][0] = latent_space[i][0]*(5.993)
+		latent_space[i][1] = latent_space[i][1]*(3.834)
+		latent_space[i][2] = latent_space[i][2]*(7.590)
+		latent_space[i][3] = latent_space[i][3]*(9.330)
+		latent_space[i][4] = latent_space[i][4]*(5331-10)+10
 
 ################################################################################
 # 				Load model based off of input variable format
@@ -36,7 +62,11 @@ try:
 	decoder = tf.keras.models.load_model("trained_models/" + model_name + "_D.h5")
 	n = 75 # number of data points in the profile (it is a model parameter)
 except:
-	raise RuntimeError("model not found")
+	try:	
+		decoder = tf.keras.models.load_model("../trained_models/" + model_name + "_D.h5")
+		n = 75 # number of data points in the profile (it is a model parameter)
+	except:
+		raise RuntimeError("model not found")
 
 ################################################################################
 # 			     	Insert zeros if required by the model
@@ -77,12 +107,12 @@ temperature = np.array([np.array([altitudes, temperature_profiles[i]]).T for i i
 weather_data = {"humidity":list(humidity[index]),
                 "temperature":list(temperature[index])}
 
-height_to_ground = cruise_alt/0.3048 - latent_space[index,-1]# feet
+height_to_ground = cruise_alt/0.3048 - latent_space[index,-1] # feet
 
 ################################################################################
 #                            Jon's Code
 ################################################################################
-deformation, run_method, bump_inputs = read_input('../axie_bump_inputs.txt')
+deformation, run_method, bump_inputs = read_input('../axie_bump_inputs1.txt')
 
 CASE_DIR = "./"  # axie bump case
 #PANAIR_EXE = 'panair.exe'  # name of the panair executable
