@@ -6,7 +6,7 @@ import platform
 import pickle
 import numpy as np
 import tensorflow as tf
-from autoencoder import *
+from weather.parameterize_atmosphere.autoencoder import *
 
 # Input parameters
 variable_file = "test_file"
@@ -31,9 +31,10 @@ for line in lines[1:]:
 ################################################################################
 # 				Load model based off of input variable format
 ################################################################################
-model_name = "%i_parameters" % len(latent_space[0])
+model_path = "../../../../data/atmosphere_models/" +\
+             "trained_models/%i_parameters" % len(latent_space[0])
 try:
-	decoder = tf.keras.models.load_model("trained_models/" + model_name + "_D.h5")
+	decoder = tf.keras.models.load_model(model_path + "_D.h5")
 	n = 75 # number of data points in the profile (it is a model parameter)
 except:
 	raise RuntimeError("model not found")
@@ -41,21 +42,20 @@ except:
 ################################################################################
 # 			     	Insert zeros if required by the model
 ################################################################################
-if len(latent_space[0]) == 3:
-	# the 2 signifies which latent variable was zero in all cases during training
+if len(latent_space[0]) != 5:
+	if len(latent_space[0]) == 3:
+		splice_index = 2
+	elif len(latent_space[0]) == 4:
+		splice_index = 1
 	zeros_to_add = np.zeros((len(latent_space),1))
-	intermediate = np.hstack((latent_space[:,:2],zeros_to_add))
-	latent_space = np.hstack((intermediate, latent_space[:,2:]))
-elif len(latent_space[0]) == 4:
-	# the 2 signifies which latent variable was zero in all cases during training
-	zeros_to_add = np.zeros((len(latent_space),1))
-	intermediate = np.hstack((latent_space[:,:1],zeros_to_add))
-	latent_space = np.hstack((intermediate, latent_space[:,1:]))
+	intermediate = np.hstack((latent_space[:,:splice_index],zeros_to_add))
+	latent_space = np.hstack((intermediate, latent_space[:,splice_index:]))
 
 ################################################################################
 # 			     	Build profiles using the trained decoder
 ################################################################################
-variable_bounds = pickle.load(open('feature_bounds.p','rb'))
+feature_bounds = "../../../../data/atmosphere_models/feature_bounds.p"
+variable_bounds = pickle.load(open(feature_bounds,'rb'))
 predictions = decoder.predict(latent_space[:,:-1])
 predicted_normalized = np.array([normalize_variable_bounds(predictions[i][:-1], n,
 								  variable_bounds = variable_bounds,

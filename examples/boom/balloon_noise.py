@@ -18,7 +18,7 @@ data = output_reader('./WBData.csv', header=['latitude', 'longitude', 'pressure'
                                              'wind_direction',
                                              'wind_speed',
                                              'THTA', 'THTE', 'THTV'],
-                     separator=',')
+                                             separator=',')
 
 sBoom_data, height_to_ground = process_data(data, altitude,
                                             directory='../data/weather/',
@@ -29,7 +29,7 @@ sBoom_data, height_to_ground = process_data(data, altitude,
                                             convert_celcius_to_fahrenheit=False)
 
 [temperature, wind, humidity] = sBoom_data
-print(sBoom_data[2])
+
 noise = boom_runner(sBoom_data, height_to_ground,
                     nearfield_file='../../data/nearfield/25D_M16_RL5.p')
 

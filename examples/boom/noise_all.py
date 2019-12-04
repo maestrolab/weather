@@ -11,7 +11,7 @@ HOUR = '00'
 altitude = 50000
 directory = './'
 
-all_data = pickle.load(open('./72469_profiles.p','rb'))
+all_data = pickle.load(open('72469_profiles.p','rb'))
 log = open('log.txt', 'w')
 noise = []
 for i in range(2):
@@ -32,6 +32,7 @@ for i in range(2):
         log.write('%i\n' % i)
 all_data['noise'] = noise
 log.close()
+
 f = open('72469_noise.p', 'wb')
 pickle.dump(all_data, f)
 f.close()
