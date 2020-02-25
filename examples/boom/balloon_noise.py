@@ -9,7 +9,7 @@ DAY = '18'
 HOUR = '00'
 altitude = 50000
 directory = './'
-locations = ['72249']  # Corresponds to Fort Worth/Dallas
+locations = ['72469']  # 72249 Corresponds to Fort Worth/Dallas
 balloon_scraper(YEAR, MONTH, DAY, HOUR, directory, save=True,
                 locations=locations)
 data = output_reader('./WBData.csv', header=['latitude', 'longitude', 'pressure', 'height',

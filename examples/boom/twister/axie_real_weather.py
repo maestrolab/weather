@@ -43,7 +43,7 @@ else:
     raise RuntimeError("platfrom not recognized")
 
 # Run
-axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE, altitude=height_to_ground,
+axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE, altitude=alt_ft,
                     weather=weather_data)
 axiebump.MESH_COARSEN_TOL = 0.00045
 axiebump.N_TANGENTIAL = 20

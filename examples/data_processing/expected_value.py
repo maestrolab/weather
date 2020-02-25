@@ -30,7 +30,7 @@ mat = scipy.io.loadmat('../../data/msc/morphing.mat')
 owl = mat['Owl'][0][0]
 naca0012 = mat['NACA0012'][0][0]
 naca4415 = mat['NACA4415'][0][0]
-
+print(owl)
 C172_props = properties({'Cl_alpha': 5.143, 'Cl_0': 0.31,
                          'planform': 16.1651, 'density': 0.770488088,
                          'mass_min': 618., 'mass_max': 919.,

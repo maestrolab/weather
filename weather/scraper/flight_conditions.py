@@ -1,6 +1,8 @@
 import time
 import pickle
 import numpy as np
+import pandas as pd
+from scipy import stats
 import matplotlib.pyplot as plt
 from scipy.optimize import fixed_point
 from sklearn.neighbors.kde import KernelDensity
@@ -147,6 +149,7 @@ class Airframe(object):
 
         while len(flight_parameters['velocity']) < num_data_points:
             for n in list(icao24s.keys()):
+                print(timestamp, len(flight_parameters['velocity']))
                 # Checks to see if airframe data is present at the current timestamp
                 api = OpenSkyApi(api_username, api_password)
                 state = api.get_states(time_secs=timestamp, icao24=icao24s[n])
@@ -201,21 +204,25 @@ class Airframe(object):
         return np.degrees(aoa)
 
     def plot_pdf(self, parameters=None,
-                 xgrid=np.linspace(-5, 35, 1000),
-                 ygrid=np.linspace(20, 75, 1000)):
+                 xgrid=np.linspace(0, 1, 400),
+                 ygrid=np.linspace(0, 1, 400)):
         """Generate contour plot visualizing PDF of velocity vs. angle of
         attack."""
 
         X, Y = np.meshgrid(xgrid, ygrid)
         Z = np.exp(self.pdf.score_samples(np.array([X.ravel(), Y.ravel()]).T))
         Z = np.reshape(Z, X.shape)
-
+        
+        X, Y = self.denormalize(np.array([X, Y]).T).T
+        
         plt.figure()
         plt.contourf(X, Y, Z)
         plt.xlabel(r'Angle of Attack ($^{\circ}$)')
         plt.ylabel('Velocity (m/s)')
         plt.colorbar(label='Probability')
-        plt.show()
+        plt.xlim([min(X.ravel()), max(X.ravel())])
+        plt.ylim([min(Y.ravel()), max(Y.ravel())])
+        
 
     def retrieve_data(self, load_data=False):
         if load_data:
@@ -238,6 +245,23 @@ class Airframe(object):
             velocity = self.pdf_velocity.sample()[0]
             aoa = self.calculate_aoa(weight, velocity)
             self.database.append([aoa[0], velocity[0]])
-
         self.database = np.array(self.database)
-        self.pdf = KernelDensity(kernel='gaussian').fit(self.database)
+        self.df = pd.DataFrame({'aoa': self.database[:,0], 'V': self.database[:,1]})
+        self.df = self.df[(np.abs(stats.zscore(self.df)) < 2).all(axis=1)]
+        print(min(self.df.values[:,0]),max(self.df.values[:,0]))
+        print(min(self.df.values[:,1]),max(self.df.values[:,1]))
+        
+        self.database = self.normalize(self.df.values)
+        self.pdf = KernelDensity(kernel='gaussian', bandwidth=0.01, algorithm='ball_tree').fit(self.database)
+
+    def normalize(self, inputs):
+        aoa, v = inputs.T
+        aoa = (aoa - min(self.df.values[:,0]))/(max(self.df.values[:,0]) - min(self.df.values[:,0]))
+        v = (v - min(self.df.values[:,1]))/(max(self.df.values[:,1]) - min(self.df.values[:,1]))
+        return(np.array([aoa, v]).T)
+
+    def denormalize(self, inputs):
+        aoa, v = inputs.T
+        aoa = aoa*(max(self.df.values[:,0]) - min(self.df.values[:,0])) + min(self.df.values[:,0])
+        v =     v*(max(self.df.values[:,1]) - min(self.df.values[:,1])) + min(self.df.values[:,1])
+        return(np.array([aoa, v]).T)

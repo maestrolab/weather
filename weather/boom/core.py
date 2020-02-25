@@ -10,7 +10,7 @@ except:
     print('Boom analysis is disabled')
 
 
-def boom_runner(data, altitude_feet,
+def boom_runner(data, altitude_feet, elevation=0,
                 nearfield_file='../../../data/nearfield/25D_M16_RL5.p'):
     '''
     Runs sBOOM
@@ -30,7 +30,7 @@ def boom_runner(data, altitude_feet,
     nearfield_sig = pickle.load(open(nearfield_file, "rb"))
 
     # initialize sBOOM
-    sboom = SboomWrapper(CASE_DIR, exe="sboomadjoint_Windows_v2.80_Fri_July_19_10_04_59_2019.dat")
+    sboom = SboomWrapper(CASE_DIR, exe="sboom_windows.dat.allow")
 
     # change mach_number for each iteration based on wind
     mach = MACH  # MachModifier(DIRECTION, MACH, ALT, wind)
@@ -39,7 +39,7 @@ def boom_runner(data, altitude_feet,
     sboom.set(mach_number=mach,
               altitude=altitude_feet,
               propagation_start=R_over_L*REF_LENGTH*3.28084,
-              altitude_stop=0.,
+              altitude_stop=elevation,
               output_format=0,
               input_xdim=2,
               signature=nearfield_sig,

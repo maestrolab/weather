@@ -145,10 +145,10 @@ def process_data(day, month, year, hour, altitude,
         lon = output['longitude']
         height = output['height']
         if key not in ['latitude', 'longitude', 'height']:
-            data, ground_altitudes = output_for_sBoom(output[key],
-                                                      key, altitude, lat,
-                                                      lon, height, data)
-    return data, ground_altitudes
+            data, elevations = output_for_sBoom(output[key],
+                                               key, altitude, lat,
+                                               lon, height, data)
+    return data, elevations
 
 
 def output_for_sBoom(li, keyName, ALT, lat, lon, height, data):
@@ -165,15 +165,13 @@ def output_for_sBoom(li, keyName, ALT, lat, lon, height, data):
     d = copy.deepcopy(data)
     k = 0
     i = 0
-    ground_level = 0
-    ground_altitudes = []
-    # ground_level = 0
-    # ground_altitudes = []
+
+    elevations = {}
     while i < len(lat):
         if i > 0:
             # appending to mini-list
             if lat[i] == 0:
-                temp_height.append(height[i] - ground_level)
+                temp_height.append(height[i])
                 temp_li.append(li[i])
                 k += 1
                 i += 1
@@ -185,15 +183,6 @@ def output_for_sBoom(li, keyName, ALT, lat, lon, height, data):
                 if temp_combo_li[0][0] == temp_combo_li[1][0]:
                     temp_combo_li.pop(0)
 
-                # TEMPORARY TEST-forcing list to be a certain length
-                # while len(temp_combo_li) > 20:
-                    # temp_combo_li.pop()
-
-                # getting to next latlon value in big list if not already there
-                # while lat[i] == 0:
-                    # i += 1
-                    # k += 1
-
                 # key is location of previous latlon in big list
                 key = '%i, %i' % (lat[i-k], lon[i-k])
 
@@ -202,6 +191,7 @@ def output_for_sBoom(li, keyName, ALT, lat, lon, height, data):
                     data[key][keyName] = temp_combo_li
                 else:
                     data[key] = {keyName: temp_combo_li}
+                elevations[key] = ground_level
 
                 # clearing mini-list and restarting
                 temp_height = []
@@ -210,21 +200,24 @@ def output_for_sBoom(li, keyName, ALT, lat, lon, height, data):
                 k = 0
                 temp_height.append(height[i])
                 ground_level = temp_height[0]
-                ground_altitudes.append(ALT - ground_level)
-                temp_height[0] = temp_height[0] - ground_level
+                ground_altitudes.append(ALT)
+                temp_height[0] = temp_height[0]
                 temp_li.append(li[i])
+
                 k += 1
                 i += 1
+
         # getting first element in big list
         else:
             temp_height.append(height[i])
             ground_level = temp_height[0]
 
-            ground_altitudes = [ALT - ground_level]
-            temp_height[0] = temp_height[0] - ground_level
+            ground_altitudes = [ALT]
+            temp_height[0] = temp_height[0]
             temp_li.append(li[i])
             k += 1
             i += 1
+
 
     # getting data from final mini-list
     temp_combo_li = combineLatLon(temp_height, temp_li)
@@ -244,7 +237,7 @@ def output_for_sBoom(li, keyName, ALT, lat, lon, height, data):
     else:
         data[key] = {keyName: temp_combo_li}
 
-    return data, ground_altitudes
+    return data, elevations
 
 
 def combineLatLon(lat, lon):
