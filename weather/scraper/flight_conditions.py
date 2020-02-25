@@ -31,6 +31,14 @@ class Airframe(object):
          - csv_filepath: path to csv file containing airframe icao24s
          - properties: object properties with all airframe and other relevant
                       properties
+
+        compatible airframes: (below are just a few examples)
+         - Airbus aircraft: "A320" and other Airbus planes in a similar manner
+         - Boeing aircraft: "B737" and other Boeing planes in a similar manner
+         - Cessna aircraft: "C172", "C180", and "C182" are the main ones
+         - King Air aircraft: "King Air"
+         - Pegasus aircraft: "Pegasus"
+         - Piper aircraft: "Piper"
        """
 
     def __init__(self, timestamp=1549729462, airframe='C172',
@@ -68,14 +76,21 @@ class Airframe(object):
         airframeDict = {airframe:{'icao24List':[]} for airframe in
                         desired_airframes}
 
+        # To add compatible airframes, copy and paste the code under the 'Piper'
+        #   elif and change the conditional statement to identify the desired aircraft
+
         for key in desired_airframes:
             # Pull icao24s for Cessna airframes.
             if key[0] == 'C':
                 airframeDict[key]['icao24List'] = [data['icao24'][i] for i in
                  range(len(data['model'])) if data['model'][i][0:3] == key[1:]]
-            # Pull icao24s for Airbus, Boeing, and all other airframes.
+            # icao24s for general aircraft (excluding Airbus and Boeing)
+            elif key[0:2] != 'B7' and key[0:2] != 'A3':
+                airframeDict[key]['icao24List'] = [data['icao24'][i] for i in
+                range(len(data['model'])) if key.lower() in data['model'][i].lower()]
+            # Pull icao24s for Airbus and Boeing
             else:
-                airframeDict[key]['icao24List'] = [data['icao24'][i+1] for i in
+                airframeDict[key]['icao24List'] = [data['icao24'][i] for i in
                  range(len(data['typecode'])) if data['typecode'][i][0:3] ==
                  key[0:3]]
 
@@ -120,20 +135,21 @@ class Airframe(object):
             for t in timestamp_list:
                 api = OpenSkyApi(api_username, api_password)
                 state = api.get_states(time_secs=t, icao24=icao24s)
-                for n in range(len(state.states)):
-                    if state.states[n]:
-                        if (state.states[n].velocity != 0) and\
-                           (state.states[n].vertical_rate != None) and\
-                           (state.states[n].velocity != None):
-                            flight_parameters['velocity'] = np.append(
-                                                flight_parameters['velocity'],
-                                                state.states[n].velocity)
-                            flight_parameters['climb_rate'] = np.append(
-                                                flight_parameters['climb_rate'],
-                                                state.states[n].vertical_rate)
-                            flight_parameters['altitude'] = np.append(
-                                                flight_parameters['altitude'],
-                                                state.states[n].baro_altitude)
+                if state is not None:
+                    for n in range(len(state.states)):
+                        if state.states[n]:
+                            if (state.states[n].velocity != 0) and\
+                               (state.states[n].vertical_rate != None) and\
+                               (state.states[n].velocity != None):
+                                flight_parameters['velocity'] = np.append(
+                                                    flight_parameters['velocity'],
+                                                    state.states[n].velocity)
+                                flight_parameters['climb_rate'] = np.append(
+                                                    flight_parameters['climb_rate'],
+                                                    state.states[n].vertical_rate)
+                                flight_parameters['altitude'] = np.append(
+                                                    flight_parameters['altitude'],
+                                                    state.states[n].baro_altitude)
             return flight_parameters
 
         airframeDict = self._update_icao24s(self.csv_filepath, desired_airframes)
@@ -154,7 +170,7 @@ class Airframe(object):
                 api = OpenSkyApi(api_username, api_password)
                 state = api.get_states(time_secs=timestamp, icao24=icao24s[n])
 
-                # If a airframe data is present at the current timestamp, sample
+                # If an airframe data is present at the current timestamp, sample
                 #   surrounding timestamps for more airframe data.
                 if state:
                     t1 = timestamp - ((time_increment-1)*60)
