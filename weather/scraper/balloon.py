@@ -156,7 +156,6 @@ def process_data(all_data, altitude,
     output['wind_x'] = wind_x
     output['wind_y'] = wind_y
     ground_altitude = output['height'][0]
-    output['height'] = [x - ground_altitude for x in output['height']]
     output.pop('wind_speed', None)
     output.pop('wind_direction', None)
 
@@ -180,7 +179,7 @@ def process_data(all_data, altitude,
     #         data, ground_altitudes = output_for_sBoom(output[key],
     #                                                   key, altitude, lat,
     #                                                   lon, height, data)
-    return [data['temperature'], data['wind'], data['humidity']], altitude - ground_altitude / 0.3048
+    return [data['temperature'], data['wind'], data['humidity']], ground_altitude / 0.3048
 
 
 def output_for_sBoom(li, keyName, ALT, lat, lon, height, data):

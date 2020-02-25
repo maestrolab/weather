@@ -12,7 +12,7 @@ hour = '00'
 alt_ft = 50000
 directory = '../../../data/noise/'
 filename = directory + year + month + day + '_' + hour + '_' + \
-    str(alt_ft) + ".p"
+    str(alt_ft) + "_old.p"
 
 f = open(filename, "rb")
 data = pickle.load(f)
