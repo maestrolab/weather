@@ -2,13 +2,14 @@ import numpy as np
 from scipy.io import loadmat
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from numpy import linalg as LA
 import pickle
 
 from weather.scraper.noaa import process
 year = '2018'
 month = '06'
 day = '21'
-hour = '00'
+hour = '12'
 alt_ft = 50000
 directory = '../../../data/noise/'
 filename = directory + year + month + day + '_' + hour + '_' + \
@@ -27,11 +28,16 @@ m.drawstates()
 m.drawcountries(linewidth=1.0)
 m.drawcoastlines()
 
-plt.contourf(map_lon, map_lat, np.array(data.noise).reshape(data.lon_grid.shape),
-             cmap=cm.coolwarm, levels=np.linspace(75, 87, 7))
+noise = np.array(data.noise).reshape(data.lon_grid.shape)
+gradients = LA.norm(np.gradient(noise), axis=0)
+print(noise)
+print(gradients)
+print(np.max(gradients), np.min(gradients))
+plt.contourf(map_lon, map_lat, gradients,
+             cmap=cm.coolwarm, levels=np.linspace(0, 2, 9))
 
 cbar = m.colorbar()
 degree_sign = '\N{DEGREE SIGN}'
-label = "Perceived level in dB (PLdB)"
+label = "PLdB Gradient magnitude"
 cbar.set_label(label)
 plt.show()

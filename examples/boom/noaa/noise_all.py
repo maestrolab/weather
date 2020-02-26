@@ -9,7 +9,7 @@ from weather.scraper.noaa import process, output_for_sBoom
 year = '2018'
 month = '06'
 day = '21'
-hour = '12'
+hour = '00'
 input_directory = '../../../matlab/'
 output_directory = '../../../data/noise/'
 filename = input_directory + year + month + day + '_' + hour + '.mat'

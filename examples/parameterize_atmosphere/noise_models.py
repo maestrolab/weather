@@ -89,15 +89,15 @@ for profile in profiles:
     sBoom_data_parametrized = [list(p_temp), 0, list(p_rh)]
 
     # Noise parameters
-    height_to_ground = (cruise_alt - data['height'][profile][0]) / 0.3048
+    elevation = data['height'][profile][0] / 0.3048
     nearfield_file = './../../data/nearfield/25D_M16_RL5.p'
 
     # Noise calculations
     noise = {'original': 0, 'parameterized': 0, 'difference': 0}
-    noise['original'] = boom_runner(sBoom_data, height_to_ground,
+    noise['original'] = boom_runner(sBoom_data, cruise_alt / 0.3048, elevation
                                     nearfield_file=nearfield_file)
 
-    noise['parameterized'] = boom_runner(sBoom_data_parametrized, height_to_ground,
+    noise['parameterized'] = boom_runner(sBoom_data_parametrized, cruise_alt / 0.3048, elevation,
                                         nearfield_file=nearfield_file)
     noise['difference'] = noise['original'] - noise['parameterized']
     print(noise)
@@ -108,7 +108,7 @@ for profile in profiles:
     write_line = [str(profile), noise['original'], noise['parameterized'],
                   noise['difference']]
     write_line.extend(latent_rep[0])
-    write_line.append(height_to_ground_m)
+    write_line.append(eleva)
 
     f.write('\t'.join(map(str,write_line)) + '\n')
 

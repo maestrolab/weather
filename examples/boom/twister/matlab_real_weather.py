@@ -43,22 +43,21 @@ else:
 	hour = str(int(atm_inputs[3]))
 lat = atm_inputs[4]
 lon = atm_inputs[5]
-alt_ft = atm_inputs[6]
+alt = atm_inputs[6]
 
 # Extracting data from database
-alt_m = alt_ft * 0.3048
 try:
-	data, altitudes = process_data(day, month, year, hour, alt_m,
+	data, elevations = process_data(day, month, year, hour, alt,
 								   directory='../../../data/weather/twister/')
 except(FileNotFoundError):
-	data, altitudes = process_data(day, month, year, hour, alt_m,
+	data, elevations = process_data(day, month, year, hour, alt,
 								   directory='../../../../data/weather/twister/')
 key = '%i, %i' % (lat, lon)
 weather_data = data[key]
 
 # Height to ground (HAG)
 index = list(data.keys()).index(key)
-height_to_ground = altitudes[index] / 0.3048
+elevation = elevations[key]
 
 CASE_DIR = "./"  # axie bump case
 #PANAIR_EXE = 'panair.exe'  # name of the panair executable
@@ -77,17 +76,19 @@ else:
 # Run
 if run_method == 'panair':
 	axiebump = AxieBump(CASE_DIR, PANAIR_EXE, SBOOM_EXE,
-                    altitude=height_to_ground,
+                    altitude=alt,
                     weather=weather_data,
-                    deformation=deformation)
+                    deformation=deformation,
+                    elevation = elevation)
 	axiebump.MESH_COARSEN_TOL = 0.00045
 	axiebump.N_TANGENTIAL = 20
 	loudness = axiebump.run(bump_inputs)
 elif run_method == 'EquivArea':
 	axiebump = EquivArea(CASE_DIR, SBOOM_EXE,
-                    altitude=height_to_ground,
+                    altitude=alt,
                     weather=weather_data,
-                    deformation=deformation)
+                    deformation=deformation,
+                    elevation=elevation)
 	loudness = axiebump.run(bump_inputs)
 else:
 	raise RuntimeError("evaluation method not recognized")
