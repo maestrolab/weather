@@ -1,9 +1,9 @@
-clc; clear; close all; echo off;
+% clc; clear; close all; echo off;
 % run setup_nctoolbox.m before anything
 %% Dataset Inputs
 yr = '2018';              %year
-mo = '12';                %month
-day = '24';               %Day
+mo = '01';                %month
+day = '02';               %Day
 hr = '1200';              %Valid values: '0000', '0600', '1200', '1800'
 
 min_lat = 13;
@@ -32,6 +32,7 @@ end
 nco = ncgeodataset(outfilename);          %nco: geodataset object
 temp = nco.geovariable('Temperature_isobaric'); % temperature (K)
 hght = nco.geovariable('Geopotential_height_isobaric'); % height above sea level (m)
+% hght = nco.geovariable('Geometrical_height'); % height above sea level (m)
 relh = nco.geovariable('Relative_humidity_isobaric'); % relative humidity
 vel_v = nco.geovariable('v-component_of_wind_isobaric'); % wind in y (m/s)
 vel_u = nco.geovariable('u-component_of_wind_isobaric'); % wind in x (m/s)

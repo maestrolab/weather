@@ -23,9 +23,6 @@ def boom_runner(data, altitude_feet, elevation=0,
     MACH = 1.6
     R_over_L = 5
 
-    # weather data
-    [temperature, wind, humidity] = data
-
     # get pressure signature from pickle
     nearfield_sig = pickle.load(open(nearfield_file, "rb"))
 
@@ -35,19 +32,34 @@ def boom_runner(data, altitude_feet, elevation=0,
     # change mach_number for each iteration based on wind
     mach = MACH  # MachModifier(DIRECTION, MACH, ALT, wind)
 
-    # update sBOOM settings and run
-    sboom.set(mach_number=mach,
-              altitude=altitude_feet,
-              propagation_start=R_over_L*REF_LENGTH*3.28084,
-              altitude_stop=elevation,
-              output_format=0,
-              input_xdim=2,
-              signature=nearfield_sig,
-              input_temp=temperature,
-              input_wind=wind,
-              input_humidity=humidity,
-              propagation_points=40000,
-              padding_points=8000)
+    if data is None:
+        # update sBOOM settings and run
+        sboom.set(mach_number=mach,
+                  altitude=altitude_feet,
+                  propagation_start=R_over_L*REF_LENGTH*3.28084,
+                  altitude_stop=elevation,
+                  output_format=0,
+                  input_xdim=2,
+                  signature=nearfield_sig,
+                  propagation_points=40000,
+                  padding_points=8000)
+    else:
+        # weather data
+        [temperature, wind, humidity] = data
+
+        # update sBOOM settings and run
+        sboom.set(mach_number=mach,
+                  altitude=altitude_feet,
+                  propagation_start=R_over_L*REF_LENGTH*3.28084,
+                  altitude_stop=elevation,
+                  output_format=0,
+                  input_xdim=2,
+                  signature=nearfield_sig,
+                  input_temp=temperature,
+                  input_wind=wind,
+                  input_humidity=humidity,
+                  propagation_points=40000,
+                  padding_points=8000)
 
     sboom_results = sboom.run()
 

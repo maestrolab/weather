@@ -34,7 +34,7 @@ print(noise)
 print(gradients)
 print(np.max(gradients), np.min(gradients))
 plt.contourf(map_lon, map_lat, gradients,
-             cmap=cm.coolwarm, levels=np.linspace(0, 2, 9))
+             cmap=cm.coolwarm, levels=np.linspace(0, 7, 15))
 
 cbar = m.colorbar()
 degree_sign = '\N{DEGREE SIGN}'

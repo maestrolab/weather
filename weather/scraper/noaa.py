@@ -38,7 +38,7 @@ def output_for_sBoom(data, longitude, latitude, aircraft_altitude,
     # Consider elevation and round up (because of sboom input) for altitude
     height_above_ground = data.height[:, index_lat, index_lon]
     height_above_ground = np.around(height_above_ground.tolist(), decimals=1)
-
+    elevation = data.elevation[index_lat, index_lon]
     # Convert temperature from Kelvin to Farenheight
     temperature = copy.deepcopy(data.temperature[:, index_lat, index_lon])
     if convert_K_to_F:
@@ -56,4 +56,4 @@ def output_for_sBoom(data, longitude, latitude, aircraft_altitude,
     for key in weather:
         weather[key] = weather[key].tolist()
     return([weather['temperature'], weather['wind'], weather['humidity']],
-           height_above_ground[0]/0.3048) # elevation needs to be in feet
+           elevation) # elevation needs to be in feet

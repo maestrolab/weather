@@ -27,7 +27,10 @@ for index in range(len(data.lonlat)):
     except:
         # Remove highest wind point in case of failure. Usually the reason
         sBoom_data[1] = sBoom_data[1][:-1]
-        noise = boom_runner(sBoom_data, altitude, elevation)
+        try:
+            noise = boom_runner(sBoom_data, altitude, elevation)
+        except(FileNotFoundError):
+            noise = np.nan
     print(data.lonlat[index], noise)
     data.noise.append(noise)
 
