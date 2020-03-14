@@ -2,15 +2,15 @@
 % run setup_nctoolbox.m before anything
 %% Dataset Inputs
 yr = '2018';              %year
-months = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"];
-days = ["01", "07", "14", "21", "28"];
+months = ['12', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+days = ['01', '07', '14', '21', '28'];
 % days = ["01", "02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28"];
-for i=1:12
-    for j=1:length(days)
-        mo = months(i);
-        day = days(j);               %Day
+for i=12:12
+    for j=18:30
+        mo = sprintf('%02d',i);
+        day = sprintf('%02d',j);               %Day
         hr = '1200';              %Valid values: '0000', '0600', '1200', '1800'
-
+        disp([mo, ', ', day])
         min_lat = 13;
         max_lat = 58;
         min_lon = -144;
@@ -26,11 +26,9 @@ for i=1:12
         end
         %%
         %Check if grib data object (nco) already exists
-        if exist('nco','var') == 0
         url=['https://nomads.ncdc.noaa.gov/data/gfsanl/', yr, mo, '/', yr, mo, day,...
             '/gfsanl_4_', yr, mo, day, '_', hr, '_000.grb2']; 
         outfilename = websave(strcat(yr, mo, day, '_', hr(1:2), '.grb'), url);
-        end
 
         %% Extract key parameters from grib datafile
 
