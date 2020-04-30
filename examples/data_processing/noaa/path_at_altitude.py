@@ -10,6 +10,7 @@ from numpy import linalg as LA
 import matplotlib.pyplot as plt
 from math import radians, cos, sin, asin, sqrt
 from scipy.interpolate import interp1d, RegularGridInterpolator, interp1d
+from scipy.stats import norm, spearmanr
 
 from weather.scraper.noaa import process
 
@@ -165,6 +166,7 @@ for month in range(1,13):
 # PLOT NOISE ALONG THE path_height
 #================================================
 
+# Along location
 mean = df.groupby('location')['noise'].mean()
 q_25 = df.groupby('location')['noise'].quantile(0.25)
 q_75 = df.groupby('location')['noise'].quantile(0.75)
@@ -175,6 +177,16 @@ q_995 = df.groupby('location')['noise'].quantile(0.995)
 max = df.groupby('location')['noise'].max()
 min = df.groupby('location')['noise'].min()
 
+# Along elevation
+mean_e = df.groupby('elevation')['noise'].mean()
+q_25_e = df.groupby('elevation')['noise'].quantile(0.25)
+q_75_e = df.groupby('elevation')['noise'].quantile(0.75)
+q_05_e = df.groupby('elevation')['noise'].quantile(0.05)
+q_95_e = df.groupby('elevation')['noise'].quantile(0.95)
+q_005_e = df.groupby('elevation')['noise'].quantile(0.005)
+q_995_e = df.groupby('elevation')['noise'].quantile(0.995)
+max_e = df.groupby('elevation')['noise'].max()
+min_e = df.groupby('elevation')['noise'].min()
 
 # Distance based
 plt.figure(figsize=(12, 4))
@@ -224,6 +236,7 @@ plt.show()
 # Time based
 plt.figure(figsize=(12, 4))
 x = np.unique(time_all)
+
 plt.fill_between(x, q_005, q_995, color='.4', alpha=0.2, lw=0, label = '99% Percentile')
 plt.fill_between(x, q_05, q_95, color='.4', alpha=0.2, lw=0, label = '90% Percentile')
 plt.fill_between(x, q_25, q_75, color='.4', alpha=0.2, lw=0, label = '50% Percentile')
@@ -266,15 +279,27 @@ plt.show()
 
 #===============================
 # PLOT RELATION BETWEEN ELEVATION AND NOISE
-# plt.figure()
-# import statsmodels.formula.api as sm
-# result = sm.ols(formula="noise ~ elevation", data=df).fit()
-# print(result.params)
-# plt.plot(df['elevation'], result.params[0] + result.params[1]*df['elevation'], 'k', label='Linear fit')
+plt.figure()
+import statsmodels.formula.api as sm
+result = sm.ols(formula="noise ~ elevation", data=df).fit()
+  
+print('Spearman correlation elevation and noise ', spearmanr(df['elevation'], df['noise']))
+
+print(result.params)
+x = np.unique(df['elevation'])
+
+plt.fill_between(x, q_005_e, q_995_e, color='.4', alpha=0.2, lw=0, label = '99% Percentile')
+plt.fill_between(x, q_05_e, q_95_e, color='.4', alpha=0.2, lw=0, label = '90% Percentile')
+plt.fill_between(x, q_25_e, q_75_e, color='.4', alpha=0.2, lw=0, label = '50% Percentile')
+# plt.plot(x, mean_e, 'k', label = 'Mean')
+# plt.plot(x, max_e, 'k', linestyle = '--', label = 'Maximum')
+# plt.plot(x, min_e, 'k', linestyle = '-.', label = 'Minimum')
+# plt.plot(x, result.params[0] + result.params[1]*x, 'k', label='Linear fit')
 # plt.scatter(df['elevation'], df['noise'], alpha=0.3, label = 'Data')
-# plt.xlabel('Elevation (ft)')
-# plt.ylabel('PLdB')
-# plt.show()
+plt.xlabel('Elevation (ft)')
+plt.ylabel('PLdB')
+plt.legend()
+plt.show()
 
 #===============================
 # WEATHER

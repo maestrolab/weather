@@ -79,7 +79,7 @@ distance_all = [0]
 for i in range(len(lat_cities)-1):
     j = i+1
     lon_path = np.linspace(lon_cities[i], lon_cities[j], 50)
-    lat_path = lat_cities[i] + (lon_path-lon_cities[i])/(lon_cities[i]-lon_cities[j])*(lat_cities[j]-lat_cities[i])
+    lat_path = lat_cities[i] + (lon_path-lon_cities[i])/(lon_cities[j]-lon_cities[i])*(lat_cities[j]-lat_cities[i])
     lon_all += list(lon_path)
     lat_all += list(lat_path)
 
@@ -122,17 +122,22 @@ pressures = np.array([100000, 97500, 95000, 92500, 90000, 85000, 80000, 75000, 7
                        20000, 15000, 10000, 7000, 5000, 3000, 2000, 1000, 700, 500, 300,
                        200, 100])
 altitude = 10.**5/2.5577*(1-(pressures/101325)**(1/5.2558)) / 0.3048
-LON, HEIGHT = np.meshgrid(altitude, distance_all)
+speed_sound = 294.9 # (m/s) at 50000ft
+v = 1.6*speed_sound
+time = 1000*np.array(distance_all)/v/60
 
-plt.figure(figsize=(12, 6))
-plt.contourf(HEIGHT, LON, path_humidity, cmap=cm.Blues, levels=np.linspace(0, 100, 21), extend = 'max')
-plt.xlabel('Distance (km)')
-plt.ylabel('Sea-level altitude (ft)')
+LON, HEIGHT = np.meshgrid(altitude, distance_all)
+TIME, HEIGHT = np.meshgrid(altitude, time)
+plt.figure(figsize=(3*3.936, 3*1.715))
+plt.contourf(HEIGHT, TIME, path_humidity, cmap=cm.Blues, levels=np.linspace(0, 100, 21), extend = 'max')
+plt.xlabel('Time (min)', fontsize=12)
+plt.ylabel('Sea-level altitude (ft)', fontsize=12)
 clb = plt.colorbar()
 clb.set_label('Relative Humidity')
-plt.fill_between(distance_all, np.zeros(len(path_elevation)), path_elevation,
+plt.fill_between(time, np.zeros(len(path_elevation)), path_elevation,
                 facecolor = ".5", edgecolor = 'k', lw=1)
 plt.ylim([0, 50000])
+plt.tick_params(axis='both', which='minor', labelsize=12)
 # plt.yticks(range(31), ylabels)
 
 
@@ -151,14 +156,15 @@ plt.xlabel('Distance (km)')
 # plt.xlabel('Distance (km)')
 #
 #
-# plt.figure(figsize=(12, 6))
-# speed_sound = 294.9 # (m/s) at 50000ft
-# v = 1.6*speed_sound
-# time = 1000*np.array(distance_all)/v/60 #minutes
-# gradient = np.gradient(path_noise, time)
-# plt.plot(time, gradient, 'k')
-# plt.ylabel('Noise gradient (PldB/min)')
-# plt.xlabel('Time (minutes)')
+plt.figure(figsize=(12, 6))
+speed_sound = 294.9 # (m/s) at 50000ft
+v = 1.6*speed_sound
+time = 1000*np.array(distance_all)/v/60 #minutes
+gradient = np.gradient(path_noise, time)
+plt.plot(time, gradient, 'k')
+plt.ylabel('Noise gradient (PldB/min)')
+plt.xlabel('Time (minutes)')
+plt.show()
 
 print('Distance for 0.5: ', haversine(0, 0, 0, 0.5))
 print('Distance for 0.3: ', haversine(0, 0, 0, 0.3))

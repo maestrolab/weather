@@ -8,7 +8,7 @@ YEAR = '2018'
 HOUR = '00'
 altitude = 50000
 directory = './'
-locations = ['72469']  # Corresponds to Fort Worth/Dallas
+locations = ['72469']  # 72249 Corresponds to Fort Worth/Dallas, 72469 is Denver
 n_days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 all_data = {'temperature': [], 'humidity': [], 'wind': [], 'month': [],
             'day': [], 'noise': [], 'height': [], 'elevation':[]}
@@ -56,7 +56,7 @@ for month in range(1, len(n_days)+1):
             else:
                 print('Not enough data')
                 log.write(YEAR + ', ' + MONTH + ', ' + DAY + '\n')
-        except(IndexError, ValueError) as e:
+        except(IndexError, ValueError, FileNotFoundError) as e:
             print('Empty data')
             log.write(YEAR + ', ' + MONTH + ', ' + DAY + '\n')
 

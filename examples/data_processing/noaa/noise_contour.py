@@ -2,6 +2,7 @@ import numpy as np
 from scipy.io import loadmat
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from scipy import interpolate
 import pickle
 
 from weather.scraper.noaa import process
@@ -28,10 +29,22 @@ m.drawstates()
 m.drawcountries(linewidth=1.0)
 m.drawcoastlines()
 
-baseline = np.min(data.noise)
-print(baseline, np.max(data.noise) - np.min(data.noise))
-plt.contourf(map_lon, map_lat, np.array(data.noise).reshape(data.lon_grid.shape),
-             cmap=cm.coolwarm, levels=np.linspace(75, 89, 15))
+# Get rid of NaN
+array = np.ma.masked_invalid(np.array(data.noise).reshape(data.lon_grid.shape))
+
+#get only the valid values
+lon1 = data.lon_grid[~array.mask]
+lat1 = data.lat_grid[~array.mask]
+newarr = array[~array.mask]
+
+noise = interpolate.griddata((lon1, lat1), newarr.ravel(),
+                          (data.lon_grid, data.lat_grid),
+                             method='cubic')
+# Plotting                       
+baseline = np.min(noise)
+print(baseline, np.max(noise) - np.min(noise))
+plt.contourf(map_lon, map_lat, np.array(noise).reshape(data.lon_grid.shape),
+             cmap=cm.coolwarm, levels=np.linspace(75, 90, 16))
 
 cbar = m.colorbar()
 degree_sign = '\N{DEGREE SIGN}'
