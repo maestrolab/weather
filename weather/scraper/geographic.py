@@ -26,17 +26,22 @@ def elevation_function(lat_all,lon_all):
     df = pd.DataFrame({'lat': lat_all, 'lon': lon_all})
     elevations = []
     for lat, lon in zip(df['lat'], df['lon']):
-
-        # define rest query params
+        # define rest query params        
         params = {
             'output': 'json',
             'x': lon,
             'y': lat,
             'units': 'Meters'
         }
-
+        
         # format query string and return query value
-        result = requests.get((url + urllib.parse.urlencode(params)))
+        done = False
+        while not done:
+            try:
+                result = requests.get((url + urllib.parse.urlencode(params)))
+                done = True
+            except:
+                pass
         elevations.append(result.json()['USGS_Elevation_Point_Query_Service']['Elevation_Query']['Elevation'])
 
     df['elev_meters'] = elevations
@@ -44,4 +49,18 @@ def elevation_function(lat_all,lon_all):
     df.loc[df['elev_meters'] == '-1000000'] = 0
     df['elev_feet'] = 3.28084*df['elev_meters']
     df.head()
+    return df
+    
+def get_elevation(lat_all, lon_all):
+    elevations = []
+    df = pd.DataFrame({'lat': lat_all, 'lon': lon_all})
+    for lat, lon in zip(lat_all, lon_all):
+        query = ('https://api.open-elevation.com/api/v1/lookup'
+                 f'?locations={lat},{lon}')
+        print(lat, lon, query)
+        r = requests.get(query).json()  # json object, various ways you can extract value
+        # one approach is to use pandas json functionality:
+        elevation = pd.io.json.json_normalize(r, 'results')['elevation'].values[0]
+        elevations.append(elevation)
+    df['elevation'] = elevations
     return df

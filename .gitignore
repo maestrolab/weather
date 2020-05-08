@@ -115,3 +115,4 @@ data/noise/*/*00.p
 *.geojson
 matlab/nctool-box-1.1.3
 *.input
+*/sBOOM

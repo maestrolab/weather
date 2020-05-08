@@ -1,10 +1,12 @@
 import copy
 import pickle
+import platform
 import numpy as np
 from scipy import interpolate
 
 try:
     from pyldb import perceivedloudness
+    from rapidboom import EquivArea
     from rapidboom.sboomwrapper import SboomWrapper
 except:
     print('Boom analysis is disabled')
@@ -70,6 +72,45 @@ def boom_runner(data, altitude_feet, elevation=0,
 
     return noise_level
 
+def boom_runner_eq(weather_data = None, altitude_feet=50000, elevation_feet=0,
+                nearfield_file='41N_74W_25D_adapt07_EALINENEW4.dat'):
+    '''
+    Runs sBOOM
+     Python3 Version
+    '''
+
+    # Define parameters
+    CASE_DIR = "."  # folder where all case files for the tools will be stored
+    REF_LENGTH = 32.92
+    MACH = 1.6
+    R_over_L = 5
+
+    if platform.system() == 'Linux' or platform.system() == 'Darwin':
+        PANAIR_EXE = 'panair'
+        SBOOM_EXE = 'sboom_linux'
+    elif platform.system() == 'Windows':
+        PANAIR_EXE = 'panair.exe'
+        SBOOM_EXE = 'sboom_windows.dat.allow'
+    else:
+        raise RuntimeError("platfrom not recognized")
+    
+    if weather_data is None:
+        axiebump = EquivArea(CASE_DIR, SBOOM_EXE,
+                        altitude=altitude_feet,
+                        mach = MACH,
+                        area_filename = nearfield_file,
+                        elevation=elevation_feet)
+    else:
+        axiebump = EquivArea(CASE_DIR, SBOOM_EXE,
+                        altitude=altitude_feet,
+                        mach = MACH,
+                        weather=weather_data,
+                        area_filename = nearfield_file,
+                        elevation=elevation_feet)
+                        
+    loudness = axiebump.run()
+
+    return loudness
 
 def prepare_weather_sBoom(data, j):
     # Define latitude and longitude

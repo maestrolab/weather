@@ -6,7 +6,7 @@ from weather import convert_to_fahrenheit
 
 def process(filename):
     data = loadmat(filename, struct_as_record=False)['s'][0][0]
-    data.height = data.height[0] * 0.3048  # Convert to meters
+    data.height = data.height[0]  # Convert to meters
     data.temperature = data.temperature[0]
     data.wind_x = data.wind_x[0]
     data.wind_y = data.wind_y[0]

@@ -27,7 +27,7 @@ def haversine(lon1, lat1, lon2, lat2):
 year = '2018'
 month = '06'
 day = '21'
-hour = '00'
+hour = '12'
 directory = '../../../matlab/'
 filename = directory + year + month + day + '_' + hour + '.mat'
 output_directory = '../../../data/noise/'
@@ -37,8 +37,8 @@ alt_ft = 50000
 # Process weather data
 data = process(filename)
 
-lat_cities = [47.6062, 43.6150, 39.7392, 30.6280, 25.7617, ]
-lon_cities = [-122.3321, -116.2023, -104.9903, -96.3344, -80.1918]
+lat_cities = [47.6062, 43.6150, 40 ]
+lon_cities = [-122.3321, -116.2023, -105]
 
 lat_all = []
 lon_all = []
@@ -122,9 +122,9 @@ for i in range(len(lon_all)):
     noise = boom_runner(sBoom_data, altitude, elevation)
     print(noise)
     path_noise.append(noise)
-f = open(output_directory + 'path_' + year + month + day + '_' + hour + '_'
-         + str(alt_ft) + ".p", "wb")
-pickle.dump(data, f)
+# f = open(output_directory + 'path_' + year + month + day + '_' + hour + '_'
+         # + str(alt_ft) + ".p", "wb")
+# pickle.dump(data, f)
 plt.figure()
 plt.plot(distance_all, path_noise, 'r')
 plt.ylabel('Perceived level in dB')

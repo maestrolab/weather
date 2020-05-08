@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 from math import radians, cos, sin, asin, sqrt
 from scipy.interpolate import interpn, RegularGridInterpolator, interp1d
 
-from weather.boom import boom_runner
+from weather.boom import boom_runner, boom_runner_eq
 from weather.scraper.noaa import process, output_for_sBoom
+from weather.scraper.geographic import elevation_function
 
 def haversine(lon1, lat1, lon2, lat2):
     """
@@ -28,7 +29,7 @@ year = '2018'
 month = '09'
 day = '26'
 hour = '12'
-location_index = 99
+
 directory = '../../../matlab/'
 filename = directory + year + month + day + '_' + hour + '.mat'
 output_directory = '../../../data/noise/'
@@ -38,28 +39,10 @@ alt_ft = 50000
 # Process weather data
 data = process(filename)
 
-lat_cities = [47.6062, 43.6150, 39.7392, 30.6280, 25.7617, ]
-lon_cities = [-122.3321, -116.2023, -104.9903, -96.3344, -80.1918]
-
-lat_all = []
-lon_all = []
-distance_all = [0]
-distance_cities = [0]
-for i in range(len(lat_cities)-1):
-    j = i+1
-    lon_path = np.linspace(lon_cities[i], lon_cities[j], 25)
-    lat_path = lat_cities[i] + (lon_path-lon_cities[i])/(lon_cities[j]-lon_cities[i])*(lat_cities[j]-lat_cities[i])
-    lon_all += list(lon_path)
-    lat_all += list(lat_path)
-
-for i in range(len(lat_all)-1):
-    j = i+1
-    distance_all.append(distance_all[-1] + haversine(lon_all[i], lat_all[i],
-                                                     lon_all[j], lat_all[j]))
-for i in range(len(lat_cities)-1):
-    j = i+1
-    distance_cities.append(distance_cities[-1] + haversine(lon_cities[i], lat_cities[i],
-                                                     lon_cities[j], lat_cities[j]))
+# lat_cities = [47.6062, 43.6150, 39.7392, 32.7555, 25.7617, ]
+# lon_cities = [-122.3321, -116.2023, -104.9903, -97.3308, -80.1918]
+lat_all = [39.7392]
+lon_all = [-104.9903]
 
 # Setting up path
 path = np.array([lat_all,lon_all]).T
@@ -95,38 +78,40 @@ path_wind_y = f_wind_y(path)
 
 
 path_noise = []
-i = location_index
-# Consider elevation and round up (because of sboom input) for altitude
-elevation = path_elevation[i]
 
-height_above_ground = np.around(path_height[i].tolist(), decimals=1)
+# Consider elevation and round up (because of sboom input) for altitude
+elevation_ft = elevation_function(lat_all, lon_all)['elev_feet'][0]
+print(elevation_ft)
+height_above_ground = np.around(path_height[0].tolist(), decimals=1)
 
 # Convert temperature from Kelvin to Farenheight
-temperature = (path_temperature[i] - 273.15) * 9/5. + 32
+temperature = (path_temperature[0] - 273.15) * 9/5. + 32
 weather = {}
 weather['wind'] = np.array([height_above_ground,
-                            path_wind_x[i].tolist(),
-                            path_wind_y[i].tolist()]).T
+                            path_wind_x[0].tolist(),
+                            path_wind_y[0].tolist()]).T
 
 weather['temperature'] = np.array([height_above_ground,
                                    temperature.tolist()]).T
 weather['humidity'] = np.array([height_above_ground,
-                                path_humidity[i].tolist()]).T
+                                path_humidity[0].tolist()]).T
 
 for key in weather:
     weather[key] = weather[key].tolist()
 
 sBoom_data = [weather['temperature'], weather['wind'], weather['humidity']]
-altitude = alt_ft
 
 # Run sBoom
 try:
-    noise = boom_runner(sBoom_data, altitude, elevation)
+    noise = boom_runner(sBoom_data, alt_ft, elevation_ft)
 except:
     # Remove highest wind point in case of failure. Usually the reason
     sBoom_data[1] = sBoom_data[1][:-1]
     try:
-        noise = boom_runner(sBoom_data, altitude, elevation)
+        noise = boom_runner(sBoom_data, alt_ft, elevation_ft)
     except(FileNotFoundError):
         noise = np.nan
+print(noise)
+
+noise = boom_runner_eq(sBoom_data, alt_ft, elevation_ft)
 print(noise)

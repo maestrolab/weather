@@ -2,14 +2,14 @@
 % run setup_nctoolbox.m before anything
 %% Dataset Inputs
 yr = '2018';              %year
-mo = '01';                %month
-day = '02';               %Day
+mo = '06';                %month
+day = '21';               %Day
 hr = '1200';              %Valid values: '0000', '0600', '1200', '1800'
 
-min_lat = 13;
-max_lat = 58;
-min_lon = -144;
-max_lon = -53;
+min_lat = 39;
+max_lat = 40;
+min_lon = -105;
+max_lon = -104;
 
 step = 1.; %even multiples of .5
 %% Convert longitude from (-180, 180) to (0,360)
@@ -69,5 +69,5 @@ Lat_flat = reshape(s.lat_grid.',1,[]);
 s.lonlat = [Lon_flat(:), Lat_flat(:)];
 filename = strcat(yr, mo, day, '_', hr(1:2),'.mat');
 s=struct(s);
-save(filename,'s')
+% save(filename,'s')
 disp('DONE')

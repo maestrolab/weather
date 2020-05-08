@@ -5,7 +5,7 @@ import pickle
 
 YEAR = '2018'
 MONTH = '06'
-DAY = '18'
+DAY = '21'
 HOUR = '00'
 altitude = 50000
 directory = './'

@@ -56,9 +56,10 @@ directory = '../../../data/noise/'
 # Determining path
 # Setting up path
 # Seattle, Boise, Denver, College Station, and Miami
-lat_cities = [47.6062, 43.6150, 39.7392, 30.6280, 25.7617, ]
-lon_cities = [-122.3321, -116.2023, -104.9903, -96.3344, -80.1918]
-
+# lat_cities = [47.6062, 43.6150, 39.7392, 30.6280, 25.7617, ]
+# lon_cities = [-122.3321, -116.2023, -104.9903, -96.3344, -80.1918]
+lat_cities = [47.6062, 43.6150, 39.7392, 32.7555, 25.7617, ]
+lon_cities = [-122.3321, -116.2023, -104.9903, -97.3308, -80.1918]
 lat_all = []
 lon_all = []
 distance_all = [0]
@@ -78,7 +79,7 @@ for i in range(len(lat_cities)-1):
     j = i+1
     distance_cities.append(distance_cities[-1] + haversine(lon_cities[i], lat_cities[i],
                                                      lon_cities[j], lat_cities[j]))
-
+print('D',distance_cities)
 path = np.array([lat_all, lon_all]).T
 # Time
 speed_sound = 294.9 # (m/s) at 50000ft
@@ -95,7 +96,7 @@ altitude = 10.**5/2.5577*(1-(pressures/101325)**(1/5.2558)) / 0.3048
 LON, HEIGHT = np.meshgrid(altitude, distance_all)
 
 all_data = {}
-df = pd.DataFrame({'location': [], 'noise': [], 'elevation': []})
+df = pd.DataFrame({'location': [], 'noise': [], 'elevation': [], 'month':[], 'day':[]})
 for month in range(1,13):
     month = '%02i' % month
     for day in range(1,31):
@@ -113,13 +114,16 @@ for month in range(1,13):
             all_data[(month, day)]['noise'] = f(distance_all)
             # Checking for Nan numbers
             df2 = pd.DataFrame({'location': distance_all,
+                                'month': month,
+                                'day': day,
                                 'noise': all_data[(month, day)]['noise'],
                                 'elevation': all_data[(month, day)]['elevation']})
             df = df.append(df2)
             print(directory + '/path_' + year + month + day + '_' + hour + '_' + str(alt_ft) + '.p')
         except(FileNotFoundError):
             pass
-
+df.reset_index(drop=True, inplace=True)
+pickle.dump(df, open('extreme.p', 'wb'))
 # Section to get data for Points of Interest
 # POI = {'location': [0, 0, 133.6, 133.6, 133.6, 133.6, 133.6, 133.6, 651,
 #                     651, 1503, 1580, 1580, 1580, 1676, 1676, 1676, 2957,
@@ -192,7 +196,7 @@ min_e = df.groupby('elevation')['noise'].min()
 plt.figure(figsize=(12, 4))
 x = df['location'].unique()
 
-city_names = ['Seattle', 'Boise', 'Denver', 'College Station', 'Miami']
+city_names = ['Seattle', 'Boise', 'Denver', 'Dallas', 'Miami']
 plt.fill_between(x, q_005, q_995, color='.4', alpha=0.2, lw=0, label = '99% Percentile')
 plt.fill_between(x, q_05, q_95, color='.4', alpha=0.2, lw=0, label = '90% Percentile')
 plt.fill_between(x, q_25, q_75, color='.4', alpha=0.2, lw=0, label = '50% Percentile')
@@ -229,7 +233,7 @@ for i in range(len(distance_cities)):
 plt.legend()
 plt.ylabel('Change in Perceived level in dB')
 plt.xlabel('Distance (km)')
-plt.ylim([0, 10])
+plt.ylim([0, 14])
 plt.xlim([0, distance])
 plt.show()
 
@@ -273,7 +277,7 @@ for i in range(len(time_cities)):
 plt.legend()
 plt.ylabel('Change in Perceived level in dB')
 plt.xlabel('Time (min)')
-plt.ylim([0, 10])
+plt.ylim([0, 14])
 plt.xlim([0, t])
 plt.show()
 

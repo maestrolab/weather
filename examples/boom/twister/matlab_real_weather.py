@@ -88,7 +88,7 @@ elif run_method == 'EquivArea':
                     altitude=alt,
                     weather=weather_data,
                     deformation=deformation,
-                    area_filename = '41N_74W_25D_adapt07_EALINENEW4.dat'
+                    area_filename = '41N_74W_25D_adapt07_EALINENEW4.dat',
                     elevation=elevation/0.3048)
 	loudness = axiebump.run(bump_inputs)
 else:

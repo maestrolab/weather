@@ -44,7 +44,7 @@ noise = interpolate.griddata((lon1, lat1), newarr.ravel(),
 baseline = np.min(noise)
 print(baseline, np.max(noise) - np.min(noise))
 plt.contourf(map_lon, map_lat, np.array(noise).reshape(data.lon_grid.shape),
-             cmap=cm.coolwarm, levels=np.linspace(75, 90, 16))
+             cmap=cm.coolwarm, levels=np.linspace(64, 80, 17))
 
 cbar = m.colorbar()
 degree_sign = '\N{DEGREE SIGN}'

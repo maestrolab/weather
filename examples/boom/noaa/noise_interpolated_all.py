@@ -6,15 +6,20 @@ from math import radians, cos, sin, asin, sqrt
 from scipy.interpolate import interpn, RegularGridInterpolator, interp1d
 
 from weather.scraper.geographic import haversine, elevation_function
-from weather.boom import boom_runner
+from weather.boom import boom_runner_eq
 from weather.scraper.noaa import process, output_for_sBoom
 
 
-    
+directory = '../../../matlab/'
 output_directory = '../../../data/noise/'
+signature_path = '../../../data/nearfield/25D_M16_RL5.p'
 
-lat_cities = [47.6062, 43.6150, 39.7392, 30.6280, 25.7617, ]
-lon_cities = [-122.3321, -116.2023, -104.9903, -96.3344, -80.1918]
+# Includes College Station
+# lat_cities = [47.6062, 43.6150, 39.7392, 30.6280, 25.7617, ]
+# lon_cities = [-122.3321, -116.2023, -104.9903, -96.3344, -80.1918]
+# Included Fort Worth/Dallas
+lat_cities = [47.6062, 43.6150, 39.7392, 32.7555, 25.7617, ]
+lon_cities = [-122.3321, -116.2023, -104.9903, -97.3308, -80.1918]
 
 lat_all = []
 lon_all = []
@@ -48,9 +53,7 @@ for month in range(1,13):
             print(month, day)
             year = '2018'
             hour = '12'
-            directory = '../../../matlab/'
             filename = directory + year + month + day + '_' + hour + '.mat'
-            output_directory = '../../../data/noise/'
 
             alt_ft = 50000
 
@@ -111,12 +114,12 @@ for month in range(1,13):
 
                 # Run sBoom
                 try:
-                    noise = boom_runner(sBoom_data, altitude, elevation)
+                    noise = boom_runner_eq(sBoom_data, altitude, elevation)
                 except:
                     # Remove highest wind point in case of failure. Usually the reason
                     sBoom_data[1] = sBoom_data[1][:-1]
                     try:
-                        noise = boom_runner(sBoom_data, altitude, elevation)
+                        noise = boom_runner_eq(sBoom_data, altitude, elevation)
                     except(FileNotFoundError):
                         noise = np.nan
                 print(noise)
