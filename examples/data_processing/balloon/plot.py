@@ -10,10 +10,10 @@ from weather.boom import boom_runner
 
 
 altitude = 50000
-directory = './'
+directory = '../../../data/noise/'
 locations = ['72469']  # '72249' Corresponds to Fort Worth/Dallas '72469'
 
-f = open(locations[0] + '_new.p', 'rb')
+f = open(directory + locations[0] + '_new.p', 'rb')
 data = pickle.load(f)
 f.close()
 
@@ -28,8 +28,10 @@ f.close()
 # BRAKE
 
 df = pd.DataFrame(data)
-q25 = df.groupby('month')['noise'].quantile(0.005)
-q75 = df.groupby('month')['noise'].quantile(0.995)
+q25 = df.groupby('month')['noise'].quantile(0.05)
+q75 = df.groupby('month')['noise'].quantile(0.95)
+q005 = df.groupby('month')['noise'].quantile(0.005)
+q995 = df.groupby('month')['noise'].quantile(0.995)
 average = []
 minimum = []
 maximum = []
@@ -50,7 +52,9 @@ q25_total = df['noise'].quantile(0.005)
 q75_total = df['noise'].quantile(0.995)
 
 altitudes = np.linspace(data['height'][0][0], altitude * 0.3048)
-print(min(minimum), q25_total, np.average(data['noise']), np.median(data['noise']), q75_total, max(maximum))
+print('Above standard at Dallas: ', len(df['noise'][df['noise'] > 78.83 ])/len(df['noise']))
+print('Above standard at sea-level: ', len(df['noise'][df['noise'] > 78.76])/len(df['noise']))
+print(min(minimum), q25_total, np.average(data['noise']), np.median(data['noise']), q75_total, max(maximum), np.std(data['noise']))
 properties_av = []
 properties_std = []
 properties_median = []
@@ -89,18 +93,18 @@ ax.set_xticks(x_axis)  # set tick positions
 # Labels are formated as integers:
 ax.set_xticklabels(x)
 
-quantiles = np.squeeze(np.array([[average - q25.values , q75.values-average]]))
+quantiles = np.squeeze(np.array([[median - q25.values , q75.values-median]]))
 
-eb = ax.errorbar(x_axis, average, yerr=quantiles, marker='', color='k', capsize=5,
+eb = ax.errorbar(x_axis, median, yerr=quantiles, marker='', color='k', capsize=5,
                  elinewidth=2,
                  markeredgewidth=2, ecolor='k',  ls='--')
-plt.scatter(x_axis, average, c='k')
+plt.scatter(x_axis, median, c='k')
 # eb[-1][0].set_linestyle('-- ')
 # plt.fill_between(x, y3, y4, color='grey', alpha='0.5')
-plt.ylim(min(data['noise']), max(data['noise']))
+plt.ylim(68, 81)
 print(maximum)
-plt.plot(x_axis, maximum, 'k', linestyle = '--', label = 'Maximum')
-plt.plot(x_axis, minimum, 'k', linestyle = '-.', label = 'Minimum')
+plt.plot(x_axis, q995, 'k', linestyle = '--', label = 'Maximum')
+plt.plot(x_axis, q005, 'k', linestyle = '-.', label = 'Minimum')
 plt.xlabel('Time in 2018')
 plt.ylabel('Perceived level in dB (PLdB)')
 plt.show()

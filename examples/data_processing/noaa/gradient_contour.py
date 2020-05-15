@@ -9,14 +9,14 @@ from weather.scraper.noaa import process
 year = '2018'
 month = '06'
 day = '21'
-hour = '12'
+hour = '00'
 alt_ft = 50000
 directory = '../../../data/noise/'
 filename = directory + year + month + day + '_' + hour + '_' + \
     str(alt_ft) + ".p"
 
 f = open(filename, "rb")
-data = pickle.load(f)
+data_0600 = pickle.load(f)
 
 fig = plt.figure(figsize=(12, 6))
 from mpl_toolkits.basemap import Basemap

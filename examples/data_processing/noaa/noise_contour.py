@@ -9,7 +9,7 @@ from weather.scraper.noaa import process
 year = '2018'
 month = '06'
 day = '21'
-hour = '12'
+hour = '00'
 alt_ft = 50000
 directory = '../../../data/noise/'
 filename = directory + year + month + day + '_' + hour + '_' + \
@@ -42,9 +42,9 @@ noise = interpolate.griddata((lon1, lat1), newarr.ravel(),
                              method='cubic')
 # Plotting                       
 baseline = np.min(noise)
-print(baseline, np.max(noise) - np.min(noise))
+print(np.min(noise), np.max(noise))
 plt.contourf(map_lon, map_lat, np.array(noise).reshape(data.lon_grid.shape),
-             cmap=cm.coolwarm, levels=np.linspace(64, 80, 17))
+             cmap=cm.coolwarm, levels=np.linspace(68, 80, 13), extend='min')
 
 cbar = m.colorbar()
 degree_sign = '\N{DEGREE SIGN}'

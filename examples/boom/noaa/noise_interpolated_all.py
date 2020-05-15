@@ -12,7 +12,7 @@ from weather.scraper.noaa import process, output_for_sBoom
 
 directory = '../../../matlab/'
 output_directory = '../../../data/noise/'
-signature_path = '../../../data/nearfield/25D_M16_RL5.p'
+eq_area_file = 'Mach1.671_Alpha0.392_HL5.dat'
 
 # Includes College Station
 # lat_cities = [47.6062, 43.6150, 39.7392, 30.6280, 25.7617, ]
@@ -114,12 +114,12 @@ for month in range(1,13):
 
                 # Run sBoom
                 try:
-                    noise = boom_runner_eq(sBoom_data, altitude, elevation)
+                    noise = boom_runner_eq(sBoom_data, altitude, elevation, nearfield_file=eq_area_file)
                 except:
                     # Remove highest wind point in case of failure. Usually the reason
                     sBoom_data[1] = sBoom_data[1][:-1]
                     try:
-                        noise = boom_runner_eq(sBoom_data, altitude, elevation)
+                        noise = boom_runner_eq(sBoom_data, altitude, elevation, nearfield_file=eq_area_file)
                     except(FileNotFoundError):
                         noise = np.nan
                 print(noise)

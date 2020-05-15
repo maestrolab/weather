@@ -57,7 +57,6 @@ def balloon_scraper(YEAR, MONTH, DAY, HOUR, directory='./', save=False,
         page = 'http://weather.uwyo.edu/cgi-bin/sounding?region=naconf&TYPE=TEXT%3ALIST&YEAR=' + \
             YEAR + '&MONTH=' + MONTH + '&FROM=' + FROM + '&TO=' + TO + \
             '&STNM=' + location
-
         # print(counter_x)
         page = requests.get(page)
         page.content

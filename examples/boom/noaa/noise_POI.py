@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from math import radians, cos, sin, asin, sqrt
 from scipy.interpolate import interpn, RegularGridInterpolator, interp1d
 
-from weather.boom import boom_runner, boom_runner_eq
+from weather.boom import  boom_runner_eq
 from weather.scraper.noaa import process, output_for_sBoom
 from weather.scraper.geographic import elevation_function
 
@@ -26,13 +26,14 @@ def haversine(lon1, lat1, lon2, lat2):
     return km
 
 year = '2018'
-month = '09'
-day = '26'
+month = '11'
+day = '17'
 hour = '12'
 
 directory = '../../../matlab/'
 filename = directory + year + month + day + '_' + hour + '.mat'
 output_directory = '../../../data/noise/'
+# eq_area_file = 'Mach1.671_Alpha0.392_HL5.dat'
 
 alt_ft = 50000
 
@@ -41,8 +42,8 @@ data = process(filename)
 
 # lat_cities = [47.6062, 43.6150, 39.7392, 32.7555, 25.7617, ]
 # lon_cities = [-122.3321, -116.2023, -104.9903, -97.3308, -80.1918]
-lat_all = [39.7392]
-lon_all = [-104.9903]
+lat_all = [44.9454]
+lon_all = [-118.2456]
 
 # Setting up path
 path = np.array([lat_all,lon_all]).T
@@ -103,15 +104,12 @@ sBoom_data = [weather['temperature'], weather['wind'], weather['humidity']]
 
 # Run sBoom
 try:
-    noise = boom_runner(sBoom_data, alt_ft, elevation_ft)
+    noise = boom_runner_eq(sBoom_data, alt_ft, elevation_ft) #, nearfield_file=eq_area_file)
 except:
     # Remove highest wind point in case of failure. Usually the reason
     sBoom_data[1] = sBoom_data[1][:-1]
     try:
-        noise = boom_runner(sBoom_data, alt_ft, elevation_ft)
+        noise = boom_runner_eq(sBoom_data, alt_ft, elevation_ft) #, nearfield_file=eq_area_file)
     except(FileNotFoundError):
         noise = np.nan
-print(noise)
-
-noise = boom_runner_eq(sBoom_data, alt_ft, elevation_ft)
 print(noise)

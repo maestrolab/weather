@@ -53,6 +53,7 @@ hour = '12'
 alt_ft = 50000
 directory = '../../../data/noise/'
 
+design = '3_'
 # Determining path
 # Setting up path
 # Seattle, Boise, Denver, College Station, and Miami
@@ -102,7 +103,7 @@ for month in range(1,13):
     for day in range(1,31):
         try:
             day = '%02i' % day
-            all_data[(month, day)] = pickle.load(open(directory + '/path_' + year + month + day + '_' + hour + '_' + str(alt_ft) + '.p', 'rb'))
+            all_data[(month, day)] = pickle.load(open(directory + '/' + design + 'path_' + year + month + day + '_' + hour + '_' + str(alt_ft) + '.p', 'rb'))
 
             # Getting rid of Nan numbers
             array = np.ma.masked_invalid(all_data[(month, day)]['noise'])
@@ -112,18 +113,27 @@ for month in range(1,13):
             newarr = array[~array.mask]
             f = interpolate.interp1d(d, newarr, fill_value="extrapolate")
             all_data[(month, day)]['noise'] = f(distance_all)
+            rh_average = []
+            rh_max = []
+            for i in range(len(all_data[(month, day)]['humidity'])):
+                rh_i = all_data[(month, day)]['humidity'][i]
+                rh_average.append(np.average(rh_i))
+                rh_max.append(np.max(rh_i))
+
             # Checking for Nan numbers
             df2 = pd.DataFrame({'location': distance_all,
                                 'month': month,
                                 'day': day,
                                 'noise': all_data[(month, day)]['noise'],
-                                'elevation': all_data[(month, day)]['elevation']})
+                                'elevation': all_data[(month, day)]['elevation'],
+                                'average_rh': rh_average,
+                                'max_rh': rh_max})
             df = df.append(df2)
-            print(directory + '/path_' + year + month + day + '_' + hour + '_' + str(alt_ft) + '.p')
+            print(directory + '/'+design+'path_' + year + month + day + '_' + hour + '_' + str(alt_ft) + '.p')
         except(FileNotFoundError):
             pass
 df.reset_index(drop=True, inplace=True)
-pickle.dump(df, open('extreme.p', 'wb'))
+pickle.dump(df, open(directory + design+'path_noise.p', 'wb'))
 # Section to get data for Points of Interest
 # POI = {'location': [0, 0, 133.6, 133.6, 133.6, 133.6, 133.6, 133.6, 651,
 #                     651, 1503, 1580, 1580, 1580, 1676, 1676, 1676, 2957,
@@ -291,14 +301,25 @@ print('Spearman correlation elevation and noise ', spearmanr(df['elevation'], df
 
 print(result.params)
 x = np.unique(df['elevation'])
-
-plt.fill_between(x, q_005_e, q_995_e, color='.4', alpha=0.2, lw=0, label = '99% Percentile')
-plt.fill_between(x, q_05_e, q_95_e, color='.4', alpha=0.2, lw=0, label = '90% Percentile')
-plt.fill_between(x, q_25_e, q_75_e, color='.4', alpha=0.2, lw=0, label = '50% Percentile')
+print('x', x)
+print('q005', q_005_e)
+print('q995', q_995_e)
+plt.fill_between(np.array(x, dtype=float),
+                 np.array(q_005_e, dtype=float),
+                 np.array(q_995_e, dtype=float),
+                 color='.4', alpha=0.2, lw=0, label = '99% Percentile')
+plt.fill_between(np.array(x, dtype=float),
+                 np.array(q_05_e, dtype=float),
+                 np.array(q_95_e, dtype=float),
+                 color='.4', alpha=0.2, lw=0, label = '90% Percentile')
+plt.fill_between(np.array(x, dtype=float),
+                 np.array(q_25_e, dtype=float),
+                 np.array(q_75_e, dtype=float),
+                 color='.4', alpha=0.2, lw=0, label = '50% Percentile')
 # plt.plot(x, mean_e, 'k', label = 'Mean')
 # plt.plot(x, max_e, 'k', linestyle = '--', label = 'Maximum')
 # plt.plot(x, min_e, 'k', linestyle = '-.', label = 'Minimum')
-# plt.plot(x, result.params[0] + result.params[1]*x, 'k', label='Linear fit')
+plt.plot(x, result.params[0] + result.params[1]*x, 'k', label='Linear fit')
 # plt.scatter(df['elevation'], df['noise'], alpha=0.3, label = 'Data')
 plt.xlabel('Elevation (ft)')
 plt.ylabel('PLdB')

@@ -73,7 +73,7 @@ def boom_runner(data, altitude_feet, elevation=0,
     return noise_level
 
 def boom_runner_eq(weather_data = None, altitude_feet=50000, elevation_feet=0,
-                nearfield_file='41N_74W_25D_adapt07_EALINENEW4.dat'):
+                nearfield_file='41N_74W_25D_adapt07_EALINENEW4.dat', MACH=1.6):
     '''
     Runs sBOOM
      Python3 Version
@@ -82,7 +82,6 @@ def boom_runner_eq(weather_data = None, altitude_feet=50000, elevation_feet=0,
     # Define parameters
     CASE_DIR = "."  # folder where all case files for the tools will be stored
     REF_LENGTH = 32.92
-    MACH = 1.6
     R_over_L = 5
 
     if platform.system() == 'Linux' or platform.system() == 'Darwin':
