@@ -120,7 +120,7 @@ for location_i in locations:
 
 max_i = df['noise'].idxmax()
 month, day, weather, noise = get_profiles(df, max_i, alt_m)
-print('Maximum', noise, month, day)
+print('Maximum', noise, month, day, df['location'][max_i])
 plot_profiles(weather, label = '%.2f (complete)' % noise, linestyle= '--', color='b')
 month, day, weather, noise = get_profiles(df, max_i, alt_m, filter=True)
 plot_profiles(weather, label = '%.2f (used)' % noise, color='b')
@@ -128,7 +128,7 @@ plot_profiles(weather, label = '%.2f (used)' % noise, color='b')
 
 min_i = df['noise'].idxmin()
 month, day, weather, noise = get_profiles(df, min_i, alt_m)
-print('Minimum', noise)
+print('Minimum', noise, month, day, df['location'][min_i])
 plot_profiles(weather, label = '%.2f (complete)' % noise, linestyle= '--', color='r')
 month, day, weather, noise = get_profiles(df, min_i, alt_m, filter = True)
 plot_profiles(weather, label = '%.2f (used)' % noise, color='r')

@@ -53,7 +53,7 @@ hour = '12'
 alt_ft = 50000
 directory = '../../../data/noise/'
 
-design = '3_'
+design = ''
 # Determining path
 # Setting up path
 # Seattle, Boise, Denver, College Station, and Miami
@@ -81,6 +81,7 @@ for i in range(len(lat_cities)-1):
     distance_cities.append(distance_cities[-1] + haversine(lon_cities[i], lat_cities[i],
                                                      lon_cities[j], lat_cities[j]))
 print('D',distance_cities)
+print(lat_all[-2], lon_all[-2])
 path = np.array([lat_all, lon_all]).T
 # Time
 speed_sound = 294.9 # (m/s) at 50000ft
@@ -100,7 +101,7 @@ all_data = {}
 df = pd.DataFrame({'location': [], 'noise': [], 'elevation': [], 'month':[], 'day':[]})
 for month in range(1,13):
     month = '%02i' % month
-    for day in range(1,31):
+    for day in range(1,32):
         try:
             day = '%02i' % day
             all_data[(month, day)] = pickle.load(open(directory + '/' + design + 'path_' + year + month + day + '_' + hour + '_' + str(alt_ft) + '.p', 'rb'))
@@ -261,10 +262,11 @@ for i in range(len(time_cities)):
     t = time_cities[i]
     plt.axvline(x=t, color = 'b', ls = '--', lw=2)
     if i==4:
-        plt.text(t - 1000*250/v/60 , 76, ' ' + city_names[i], color = 'b')
+        plt.text(t - 1000*250/v/60 , 64, ' ' + city_names[i], color = 'b')
     else:
-        plt.text(t, 76, ' ' + city_names[i], color = 'b')
-plt.legend()
+        plt.text(t, 64, ' ' + city_names[i], color = 'b')
+# plt.legend()
+plt.ylim([64, 86])
 plt.ylabel('Perceived level in dB')
 plt.xlabel('Time (min)')
 plt.xlim([0, t])
