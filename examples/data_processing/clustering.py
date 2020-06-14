@@ -39,7 +39,7 @@ locations = ['03953', '04220', '04270', '04360', '08508', '70133',
              '72518', '72520', '72528', '72558', '72562', '72572',
              '72582', '72597', '72632', '72634', '72645', '72649',
              '72659', '72662', '72672', '72681', '72694', '72712',
-             '72747', '72764', '72768', '72776', 
+             '72747', '72764', '72768', '72776', '72786', '72797',
              '74005', '74389', '74455', '74494', '74560', '74646',
              '74794', '76256', '76394', '76458', '76526', '76595',
              '76612', '76644', '76654', '76679', '76805', '78016',
@@ -51,6 +51,12 @@ locations = ['03953', '04220', '04270', '04360', '08508', '70133',
 
 location = 0
 while location <= len(locations):
+    
+    # loop gets stuck around here saying the n_something has to be greater 
+    # than the amount of centers
+    
+    if locations[location] == '72797':
+        break
     
 # Load atmospheric data ./../../../72469_profiles.p
 # Concise? Need more clusters? What features lead to louder percieved noise? etc...
@@ -155,6 +161,7 @@ while location <= len(locations):
                     c=colors[ii], label=ii)
         
     # continue the iteration until the final index of the file list is reached
+    
     print('Current file =', locations[location])
     location += 1        
         
