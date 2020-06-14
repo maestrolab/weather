@@ -13,5 +13,6 @@ weather/boom/core.py
 weather/scraper/__init__.py
 weather/scraper/balloon.py
 weather/scraper/flight_conditions.py
+weather/scraper/geographic.py
 weather/scraper/noaa.py
 weather/scraper/twister.py
