@@ -6,9 +6,15 @@ from matplotlib import cm
 from scipy.interpolate import interp1d
 from sklearn.cluster import KMeans
 from sklearn.cluster import DBSCAN
+from sklearn.manifold import TSNE
 from sklearn.metrics import pairwise_distances_argmin_min
 from scipy.signal import savgol_filter
 
+# additonal packages by Michael
+
+import sklearn
+import seaborn as sns
+from sklearn.preprocessing import StandardScaler
 
 # Colors for the clusters?
 colors = [[0, 0.4470, 0.7410],
@@ -19,14 +25,16 @@ colors = [[0, 0.4470, 0.7410],
           [0.3010, 0.7450, 0.9330],
           [0.6350, 0.0780, 0.1840]]
 
-# Array used to cycle through each atmospheric profile of provided weather data
+# List used to cycle through each atmospheric profile of provided weather data
+# 72797 removed
+
 locations = ['03953', '04220', '04270', '04360', '08508', '70133',
              '70200', '70219', '70231', '70261', '70273', '70316',
              '70326', '70350', '70398', '70414', '71043', '71081',
-             '71109', '71119', '71126', '71600', '71603', '71722',
+             '71109', '71119', '71600', '71603', '71722',
              '71811', '71815', '71816', '71823', '71836', '71845',
              '71867', '71906', '71907', '71908', '71909', '71913',
-             '71924', '71925', '71926', '71934', '71945', '71957',
+             '71925', '71926', '71934', '71945', '71957',
              '71964', '72201', '72202', '72206', '72208', '72210',
              '72214', '72215', '72230', '72233', '72235', '72240',
              '72248', '72249', '72251', '72261', '72265', '72274',
@@ -45,26 +53,39 @@ locations = ['03953', '04220', '04270', '04360', '08508', '70133',
              '78807', '78897', '78954', '78970', '91285', '80222',
              '82022', '91165', '91285']
 
-# Change to locations instead of 1, will loop through array, how to save all
-# data though?
-for location in range(1):
+# loop to iterate throughout all weather data, see which files missing
+
+location = 0
+
+# a loop for all data and a loop for a single file for testing code
+
+# while location < len(locations):
+while location < 1:
+    
+    # loop gets stuck around here saying the n_something has to be greater 
+    # than the amount of centers
+    
+    if locations[location] == '72797':
+        break
+    
 # Load atmospheric data ./../../../72469_profiles.p
-# I plan on running a loop to simulate all data files, later saving the data
-# if possible in addition to the graphs
 # Concise? Need more clusters? What features lead to louder percieved noise? etc...
 # Run K-means, then DB-Scan, then implement t-SNE plot to help interpret results
 
-    directory = 'C:/Users/micha/Desktop/O-REU/Github/weather/data/balloon/'
-    data = pickle.load(open(directory+locations[79]+'.p', 'rb'))
+    directory = 'C:/Users/micha/Desktop/O-REU/Balloon Data/'
+    data = pickle.load(open(directory+locations[location]+'.p', 'rb'))
     
-    # data points
+    # data points?
+    
     n = 200
-    # number of clusters
+    
+    # guess the number of clusters
+    
     n_clusters = 5
+    
     rh = np.array(data['humidity'])
     m = len(rh)
     alt_interpolated = np.linspace(data['elevation'][0], 13500, n)
-    
     
     data_interpolated = np.zeros((len(rh), len(alt_interpolated), 2))
     for i in range(m):
@@ -86,64 +107,118 @@ for location in range(1):
     
     # Clustering time
     points = data_interpolated[:, :, 1]
+    
     # Kmeans is one technique, fit is one of the commands
-    kmeans = DBSCAN().fit(points)
-    DBSCAN.fit(points)
-    y_km = DBSCAN.fit_predict(points)
+    # KMeans has multiple inputs, most are set to default in this case
+    
+    kmeans = KMeans(n_clusters=n_clusters)
+    kmeans.fit(points)
+    
+    # Attempt at DBSCAN
+    points = StandardScaler().fit_transform(points)
+    db_scan = DBSCAN()
+    db_scan.fit_predict(points)
+    
+    # need to specfiy color
+    
+    plt.scatter(points[:,0], points[:,1])
+    plt.legend()
+    plt.show()
+    
+    # leave this variable name the same
+    
+    # y_km = kmeans.fit_predict(points)
+    
     # determine the centers of the clusters
+    # what do the numerical values of centers and indexes mean?
+    
     centers = kmeans.cluster_centers_
     centers = [np.average(centers[i]) for i in range(n_clusters)]
-    print(centers)
-    print(np.argsort(centers))
+    print('Centers =',centers)
+    print('Sort Centers =', (np.argsort(centers)))
     indexes = np.arange(n_clusters)[np.argsort(centers)]
-    print(indexes)
-    print(np.array(colors)[indexes])
+    print('indexes =', indexes)
+    print('Colors =',(np.array(colors)[indexes]))
     
-    # plotting all of the figures, some plots are squished because of the axis
-    # will require scaling; this will make the clusters look better
+    # some plots require scaling to prevent squishing
+    # What do the plots show?
     
-    plt.figure()
-    s = plt.scatter(average, location_of_maximum, c=data['noise'], cmap='gray')
-    plt.colorbar(s)
+    # plt.figure()
+    # s = plt.scatter(average, location_of_maximum, c=data['noise'], cmap='gray')
+    # plt.colorbar(s)
     
-    plt.figure()
-    for ii in indexes:
-        plt.scatter(average[y_km == ii], np.array(data['noise'])[y_km == ii],
-                    c=colors[ii], label=ii)
-    # plt.legend()
+    # plt.figure()
+    # for ii in indexes:
+    #     plt.scatter(average[y_km == ii], np.array(data['noise'])[y_km == ii],
+    #                 c=colors[ii], label=ii)
+    # # plt.legend()
     
-    plt.figure()
-    for ii in indexes:
-        plt.scatter(average[y_km == ii], maximum[y_km == ii],
-                    c=colors[ii], label=ii)
+    # plt.figure()
+    # for ii in indexes:
+    #     plt.scatter(average[y_km == ii], maximum[y_km == ii],
+    #                 c=colors[ii], label=ii)
     
-    plt.figure()
-    for ii in indexes:
-        plt.scatter(average[y_km == ii], location_of_maximum[y_km == ii],
-                    c=colors[ii], label=ii)
+    # plt.figure()
+    # for ii in indexes:
+    #     plt.scatter(average[y_km == ii], location_of_maximum[y_km == ii],
+    #                 c=colors[ii], label=ii)
     
-    plt.figure()
-    for ii in indexes:
-        plt.scatter(location_of_maximum[y_km == ii], np.array(data['noise'])[y_km == ii],
-                    c=colors[ii], label=ii)
+    # plt.figure()
+    # for ii in indexes:
+    #     plt.scatter(location_of_maximum[y_km == ii], np.array(data['noise'])[y_km == ii],
+    #                 c=colors[ii], label=ii)
     				
-    plt.figure()
-    plt.xlabel('Average')
-    print('i', indexes)
-    print(indexes[::-1])
-    for ii in range(4):
-        plt.scatter(average[y_km == ii], np.array(data['noise'])[y_km == ii],
-                    c=colors[ii], label=ii)
-        print(len(np.array(data['noise'])[y_km == ii]))
+    # plt.figure()
+    # plt.xlabel('Average')
+    # print('i', indexes)
     
-    plt.figure()
-    for ii in indexes:
-        plt.scatter(maximum[y_km == ii], np.array(data['noise'])[y_km == ii],
-                    c=colors[ii], label=ii)
+    # # indexes backwards
+    
+    # print(indexes[::-1])
+    # for ii in range(4):
+    #     plt.scatter(average[y_km == ii], np.array(data['noise'])[y_km == ii],
+    #                 c=colors[ii], label=ii)
+    #     print(len(np.array(data['noise'])[y_km == ii]))
+    
+    # plt.figure()
+    # for ii in indexes:
+    #     plt.scatter(maximum[y_km == ii], np.array(data['noise'])[y_km == ii],
+    #                 c=colors[ii], label=ii)
+    
+    # tSNE plot attempt
+    
+    sklearn.manifold.TSNE()
+    
+    # tried 'data' then 'points' worked after getting an error with data
+    
+    data_tsne = TSNE(n_components = 2).fit_transform(points)
+    
+    # statement prints right before current file ex: (227, 2) 
+    # how to actually view the plot, what do the numbers mean?
+    # first number only increases, second is dimensions
+    # hue = y was removed from sns scatter after bounds 
+    
+    print(data_tsne.shape)
+    
+    # set colors?
+    
+    palette = sns.color_palette("bright", 10)
+    
+    # view the plot with certain parameters
+    # how to change the range?
+    
+    sns.scatterplot(data_tsne[:,0], data_tsne[:,1],
+                    legend='full', palette=palette)
+    
+    # tested changing range, didn't help
+    # plt.axis([-120, 120, -120, 120])
+    
+    # continue the iteration until the final index of the file list is reached
+    
+    print('Current file =', locations[location])
+    location += 1        
         
-        
-        
-        
+    plt.show()  
         
         
         
@@ -178,8 +253,3 @@ for location in range(1):
             # x, y = data_i[i].T
             # plt.plot(y, x, jj, color='k', alpha=0.05)
         # plt.plot(average_plot[jj][0, :], data[jj][0, :, 0], color=colors[jj])
-        
-        
-        
-    # Shows all of the plots
-    plt.show()

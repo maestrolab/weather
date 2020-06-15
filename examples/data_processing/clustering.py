@@ -80,7 +80,7 @@ while location < 1:
     
     # guess the number of clusters
     
-    n_clusters = 4
+    n_clusters = 5
     
     rh = np.array(data['humidity'])
     m = len(rh)
@@ -186,22 +186,27 @@ while location < 1:
     # first number only increases, second is dimensions
     # hue = y was removed from sns scatter after bounds 
     
-    
     print(data_tsne.shape)
     
     # set colors?
+    
     palette = sns.color_palette("bright", 10)
     
     # view the plot with certain parameters
+    # how to change the range?
+    
     sns.scatterplot(data_tsne[:,0], data_tsne[:,1],
                     legend='full', palette=palette)
+    
+    # tested changing range, didn't help
+    # plt.axis([-120, 120, -120, 120])
     
     # continue the iteration until the final index of the file list is reached
     
     print('Current file =', locations[location])
     location += 1        
         
-        
+    plt.show()  
         
         
         
@@ -236,8 +241,3 @@ while location < 1:
             # x, y = data_i[i].T
             # plt.plot(y, x, jj, color='k', alpha=0.05)
         # plt.plot(average_plot[jj][0, :], data[jj][0, :, 0], color=colors[jj])
-        
-        
-        
-    # Shows all of the plots
-    plt.show()
