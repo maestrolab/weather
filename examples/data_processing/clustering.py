@@ -6,9 +6,14 @@ from matplotlib import cm
 from scipy.interpolate import interp1d
 from sklearn.cluster import KMeans
 from sklearn.cluster import DBSCAN
+from sklearn.manifold import TSNE
 from sklearn.metrics import pairwise_distances_argmin_min
 from scipy.signal import savgol_filter
 
+# additonal packages by Michael
+
+import sklearn
+import seaborn as sns
 
 # Colors for the clusters?
 colors = [[0, 0.4470, 0.7410],
@@ -50,7 +55,11 @@ locations = ['03953', '04220', '04270', '04360', '08508', '70133',
 # loop to iterate throughout all weather data, see which files missing
 
 location = 0
-while location <= len(locations):
+
+# a loop for all data and a loop for a single file for testing code
+
+# while location < len(locations):
+while location < 1:
     
     # loop gets stuck around here saying the n_something has to be greater 
     # than the amount of centers
@@ -72,6 +81,7 @@ while location <= len(locations):
     # guess the number of clusters
     
     n_clusters = 4
+    
     rh = np.array(data['humidity'])
     m = len(rh)
     alt_interpolated = np.linspace(data['elevation'][0], 13500, n)
@@ -108,6 +118,7 @@ while location <= len(locations):
     y_km = kmeans.fit_predict(points)
     
     # determine the centers of the clusters
+    # what do the numerical values of centers and indexes mean?
     
     centers = kmeans.cluster_centers_
     centers = [np.average(centers[i]) for i in range(n_clusters)]
@@ -148,7 +159,9 @@ while location <= len(locations):
     plt.figure()
     plt.xlabel('Average')
     print('i', indexes)
+    
     # indexes backwards
+    
     print(indexes[::-1])
     for ii in range(4):
         plt.scatter(average[y_km == ii], np.array(data['noise'])[y_km == ii],
@@ -159,7 +172,30 @@ while location <= len(locations):
     for ii in indexes:
         plt.scatter(maximum[y_km == ii], np.array(data['noise'])[y_km == ii],
                     c=colors[ii], label=ii)
-        
+    
+    # tSNE plot attempt
+    
+    sklearn.manifold.TSNE()
+    
+    # tried 'data' then 'points' worked after getting an error with data
+    
+    data_tsne = TSNE(n_components = 2).fit_transform(points)
+    
+    # statement prints right before current file ex: (227, 2) 
+    # how to actually view the plot, what do the numbers mean?
+    # first number only increases, second is dimensions
+    # hue = y was removed from sns scatter after bounds 
+    
+    
+    print(data_tsne.shape)
+    
+    # set colors?
+    palette = sns.color_palette("bright", 10)
+    
+    # view the plot with certain parameters
+    sns.scatterplot(data_tsne[:,0], data_tsne[:,1],
+                    legend='full', palette=palette)
+    
     # continue the iteration until the final index of the file list is reached
     
     print('Current file =', locations[location])
