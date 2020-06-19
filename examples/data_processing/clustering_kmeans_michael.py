@@ -42,8 +42,8 @@ locations = ['03953', '04220', '04270', '04360', '08508', '70133',
              '78807', '78897', '78954', '78970', '91285', '80222',
              '82022', '91165', '91285']
 
-all_data = list()
-
+# all_data = list()
+# plt.figure()
 location = 0
 # while location < len(locations):
 while location < 1:
@@ -70,11 +70,14 @@ while location < 1:
     # ***227 (len of data temp) represents different days***, 
     # the amount of two dimensional data points per file on each day 
     # represent the different heights data was taken at in the (same?) location
+    # 227 noise values, one for each day but what height??
        
     # [0][0][1] is temp
     # data to array
     
     temp = (data['temperature'])
+    hum = (data['humidity'])
+    noise = (data['noise'])
 
     ####
 
@@ -84,27 +87,35 @@ while location < 1:
     #### 227 indexes per file ### CHANGE HERE ###
     
     # for i in range(len(data['temperature'])):
-    for i in range(5):
+    for i in range(25):
         # print(len(data['temperature'])) # (227)
         print('CURRENT INDEX:', i)
         # important, goes through the 227 days for each file (line 86)
+        
+        # for temp
         points = temp[i]
         points = np.array(points)
         
-        # to help compare
-        # print(temp[0])
-        # print('#####')
-        # print(temp[1])
+        # for humidity
+        points_1 = hum[i]
+        points_1 = np.array(points_1)
         
         ### CLUSTERING, SPECIFY CLUSTERS HERE ###
         n_clusters = 5
-        kmeans = KMeans(n_clusters = n_clusters)      
+        kmeans = KMeans(n_clusters = n_clusters)   
+        
+        # for temp
         kmeans.fit(points)
         clusters = kmeans.cluster_centers_
+        
+        # for hum
+        kmeans.fit(points_1)
+        clusters_1 = kmeans.cluster_centers_
+        
         y_km = kmeans.fit_predict(points)
+        y_km_1 = kmeans.fit_predict(points_1)
         
         graph_number = (i+1)
-        print(graph_number)
         
         # amount of unique numbers == clusters, -1 means noise/outlier/not in one
         
@@ -120,12 +131,12 @@ while location < 1:
         
         ### clustered visualization of data with n_clusters ###
         
-        colors = ['Red', 'Blue', 'Green', 'Purple', 'Yellow']
+        ## TEMPERATURE VS. HEIGHT ###
 
         plt.figure()
         for i in range(n_clusters):
             plt.scatter(points[y_km == i, 0], points[y_km == i, 1])
-        print('Number of points:', len(points))
+        print('Number of points (temp):', len(points))
         
         # these show the centers of the clusters
         
@@ -136,21 +147,38 @@ while location < 1:
         plt.ylabel('Temperature in f')
         plt.title('Clustered Temp VS. H: File: %i' % int(current_file) +', Index %i' % graph_number)       
         
+        ### HUMIDITY VS. HEIGHT ###, try to loop this to cut down on code
         
-        ### t-SNE plot
+        plt.figure()
+        for i in range(n_clusters):
+            plt.scatter(points_1[y_km_1 == i, 0], points_1[y_km_1 == i, 1])
+        print('Number of points (hum):', len(points_1))
+        
+        # these show the centers of the clusters
+        
+        for i in range(n_clusters):
+            plt.scatter(clusters_1[i][0], clusters_1[i][1], c = 'black',
+                        marker = '*', s=100)
+        plt.xlabel('Height in ft.')
+        plt.ylabel('Relative humidity in %')
+        plt.title('Clustered Hum VS. H: File: %i' % int(current_file) +', Index %i' % graph_number)
+        
+        
+        ### t-SNE plot ###
         
         sklearn.manifold.TSNE()
         data_tsne = TSNE(n_components = 2, perplexity = 30, 
-                     learning_rate = 200).fit_transform(points)
+                     learning_rate = 100).fit_transform(points)
     
         # palette = sns.color_palette("bright", 10)
         # print(data_tsne)
-        plt.figure()
         
         # need to associate noise with certain points
         
-        sns.scatterplot(data_tsne[:,0], data_tsne[:,1], hue= np.array(data['noise'][:len(points)]))
-        print(len(data_tsne))
+        # sns.scatterplot(data_tsne[:,0], data_tsne[:,1], hue=np.array(data['noise'][:len(points)]))
+        # print(len(data_tsne))
+        # plt.figure()
+        # plt.scatter(data_tsne[:,0], data_tsne[:,1], c=np.array(data['noise'][:len(points)]))
         
         
         
@@ -251,7 +279,6 @@ while location < 1:
     # length of hum_list: 18116018
     # length of height_list_hum: 18116018
     # Length of noise data: 436
-
 
 
 
