@@ -5,13 +5,13 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from scipy.interpolate import interp1d
 from sklearn.cluster import KMeans
-from sklearn.cluster import DBSCAN
-from sklearn.manifold import TSNE
 from sklearn.metrics import pairwise_distances_argmin_min
 from scipy.signal import savgol_filter
 
 # additonal packages by Michael
 
+from sklearn.cluster import DBSCAN
+from sklearn.manifold import TSNE
 import sklearn
 import seaborn as sns
 
@@ -60,28 +60,39 @@ location = 0
 
 # while location < len(locations):
 while location < 1:
-    
-    # loop gets stuck around here saying the n_something has to be greater 
-    # than the amount of centers
-    
+
     if locations[location] == '72797':
         break
     
 # Load atmospheric data ./../../../72469_profiles.p
-# Concise? Need more clusters? What features lead to louder percieved noise? etc...
-# Run K-means, then DB-Scan, then implement t-SNE plot to help interpret results
 
     directory = 'C:/Users/micha/Desktop/O-REU/Balloon Data/'
-    data = pickle.load(open(directory+locations[location]+'.p', 'rb'))
+    data = pickle.load(open(directory+locations[0]+'.p', 'rb'))
     
-    # data points?
-    
+    # review dicts; elevations constant?
+    print(data.keys())
+    print('ELEVATION:', data['elevation'][0:10])
+    print('length elevation:', len(data['elevation']))
+    print('HEIGHT:',data['height'][0:9])
+    print('TEMPERATURE:', data['temperature'][0])
+    # print('HUMIDITY:', data['humidity'][0:9])    
     n = 200
+    n_clusters = 4
     
-    # guess the number of clusters
+    # 227 (depends on file?) different indexes per file, each index has around 40 - 60 2 dimensional 
+    # data points in the format (height, temperature)
+    # unable to collect data for all heights, so interpolated on line 95
+    # elevations are all the same, even for different files (98.42)
+    # heights are what are different
+    print('length:', len(data['temperature'][0]))
+    temp_list = list()
+    for i in range(len(data['temperature'][0])):
+        # list of just the temps at varying heights
+        temp_list.append(data['temperature'][0][i][1])
+    print('length temp_list', len(temp_list))
+    print('temp_list:', temp_list)
     
-    n_clusters = 5
-    
+    # only taking in relative humidity data
     rh = np.array(data['humidity'])
     m = len(rh)
     alt_interpolated = np.linspace(data['elevation'][0], 13500, n)
@@ -104,21 +115,13 @@ while location < 1:
     standard = np.array(
         [np.average(np.absolute(data_interpolated[i, :, 1]-average_profile)) for i in range(m)])
     
-    # Clustering time
-    points = data_interpolated[:, :, 1]
-    
-    # Kmeans is one technique, fit is one of the commands
-    # KMeans has multiple inputs, most are set to default in this case
+    # clustering time
+    points = data_interpolated[:, :, 1] # all, all, only first index (temp)
     
     kmeans = KMeans(n_clusters=n_clusters)
     kmeans.fit(points)
     
-    # leave this variable name the same
-    
     y_km = kmeans.fit_predict(points)
-    
-    # determine the centers of the clusters
-    # what do the numerical values of centers and indexes mean?
     
     centers = kmeans.cluster_centers_
     centers = [np.average(centers[i]) for i in range(n_clusters)]
@@ -127,9 +130,6 @@ while location < 1:
     indexes = np.arange(n_clusters)[np.argsort(centers)]
     print('indexes =', indexes)
     print('Colors =',(np.array(colors)[indexes]))
-    
-    # some plots require scaling to prevent squishing
-    # What do the plots show?
     
     plt.figure()
     s = plt.scatter(average, location_of_maximum, c=data['noise'], cmap='gray')
@@ -160,8 +160,6 @@ while location < 1:
     plt.xlabel('Average')
     print('i', indexes)
     
-    # indexes backwards
-    
     print(indexes[::-1])
     for ii in range(4):
         plt.scatter(average[y_km == ii], np.array(data['noise'])[y_km == ii],
@@ -173,33 +171,26 @@ while location < 1:
         plt.scatter(maximum[y_km == ii], np.array(data['noise'])[y_km == ii],
                     c=colors[ii], label=ii)
     
-    # tSNE plot attempt
+    # t-SNE plot 
     
     sklearn.manifold.TSNE()
     
     # tried 'data' then 'points' worked after getting an error with data
+    # perplexity default = 30
+    # color based on parameters
     
-    data_tsne = TSNE(n_components = 2).fit_transform(points)
-    
-    # statement prints right before current file ex: (227, 2) 
-    # how to actually view the plot, what do the numbers mean?
-    # first number only increases, second is dimensions
-    # hue = y was removed from sns scatter after bounds 
+    data_tsne = TSNE(n_components = 2, perplexity = 30, 
+                     learning_rate = 750).fit_transform(points)
     
     print(data_tsne.shape)
     
-    # set colors?
+    # palette = sns.color_palette("bright", 10)
     
-    palette = sns.color_palette("bright", 10)
+    plt.figure()
+    sns.scatterplot(data_tsne[:,0], data_tsne[:,1], hue = np.array(data['noise']))
     
-    # view the plot with certain parameters
-    # how to change the range?
-    
-    sns.scatterplot(data_tsne[:,0], data_tsne[:,1],
-                    legend='full', palette=palette)
-    
-    # tested changing range, didn't help
-    # plt.axis([-120, 120, -120, 120])
+    # plot with different ranges, or can use console
+    plt.axis([-500, 500, -500, 500])
     
     # continue the iteration until the final index of the file list is reached
     

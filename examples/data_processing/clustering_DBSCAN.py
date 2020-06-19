@@ -13,8 +13,10 @@ from scipy.signal import savgol_filter
 # additonal packages by Michael
 
 import sklearn
+import sklearn.utils
 import seaborn as sns
 from sklearn.preprocessing import StandardScaler
+from sklearn import metrics
 
 # Colors for the clusters?
 colors = [[0, 0.4470, 0.7410],
@@ -53,38 +55,47 @@ locations = ['03953', '04220', '04270', '04360', '08508', '70133',
              '78807', '78897', '78954', '78970', '91285', '80222',
              '82022', '91165', '91285']
 
-# loop to iterate throughout all weather data, see which files missing
-
 location = 0
-
-# a loop for all data and a loop for a single file for testing code
 
 # while location < len(locations):
 while location < 1:
-    
-    # loop gets stuck around here saying the n_something has to be greater 
-    # than the amount of centers
     
     if locations[location] == '72797':
         break
     
 # Load atmospheric data ./../../../72469_profiles.p
-# Concise? Need more clusters? What features lead to louder percieved noise? etc...
-# Run K-means, then DB-Scan, then implement t-SNE plot to help interpret results
-
+# Elevation remains constant, there are 227 profiles
     directory = 'C:/Users/micha/Desktop/O-REU/Balloon Data/'
     data = pickle.load(open(directory+locations[location]+'.p', 'rb'))
+    print(data.keys())
+    # print('HUMIDITY:',data['humidity'][0],'\n')
+    print('TEMPERATURE:',data['temperature'][0],'\n')
+    print('HEIGHT:',data['height'],'\n')
+    print('ELEVATION:', data['elevation'],'\n')
     
-    # data points?
+    # noises are single values
+    
+    print('NOISE:', data['noise'][0:10],'\n')
+      
+    # these lines only necessary for kmeans
     
     n = 200
-    
-    # guess the number of clusters
-    
     n_clusters = 5
     
+    # only pulling humidity, take temperature, check order
+    
+    
+    #############################
+    
+    
     rh = np.array(data['humidity'])
+    # print(rh)
+    temp = np.array(data['temperature'])
     m = len(rh)
+    m_1 = len(temp)
+    
+    # creates and evenly spaced array from starting to end elevations with
+    # n spacings (data points)
     alt_interpolated = np.linspace(data['elevation'][0], 13500, n)
     
     data_interpolated = np.zeros((len(rh), len(alt_interpolated), 2))
@@ -94,6 +105,9 @@ while location < 1:
         fun = interp1d(alt, values, fill_value="extrapolate")
         values_interpolated = fun(alt_interpolated)
         data_interpolated[i] = np.array([alt_interpolated, values_interpolated]).T
+    
+    
+    #####################################
     
     # metrics
     average = np.array([np.average(data_interpolated[i, :, 1]) for i in range(m)])
@@ -105,25 +119,47 @@ while location < 1:
     standard = np.array(
         [np.average(np.absolute(data_interpolated[i, :, 1]-average_profile)) for i in range(m)])
     
-    # Clustering time
+    # clustering time
     points = data_interpolated[:, :, 1]
-    
-    # Kmeans is one technique, fit is one of the commands
-    # KMeans has multiple inputs, most are set to default in this case
     
     kmeans = KMeans(n_clusters=n_clusters)
     kmeans.fit(points)
     
-    # Attempt at DBSCAN
-    points = StandardScaler().fit_transform(points)
-    db_scan = DBSCAN()
-    db_scan.fit_predict(points)
+    # standard scaler does some preprocessing
+    
+    points_1 = StandardScaler().fit_transform(points)
+    # 10 and 20 get 2 clusters, only applicable to this file and still
+    # has high noise
+    db_scan = DBSCAN(eps = 10, min_samples = 20)
+    
+    # plot the 118 points with coloring from dbscan 
+    
+    # db points is an array, points_1 still in large dimensions
+    
+    db_points = db_scan.fit_predict(points_1)
+    y_km = db_points
+    
+    # db_points is the reduced data
+    
+    # print('db_points=', db_points)
+    labels = db_scan.labels_
+    print('Unique numbers =/-1 belong to a cluster:', db_scan.labels_)
+
+    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+    n_noise_ = list(labels).count(-1)
+    print('Clusters =',n_clusters_)
+    print('Noise =', n_noise_,'%')
     
     # need to specfiy color
     
-    plt.scatter(points[:,0], points[:,1])
-    plt.legend()
-    plt.show()
+    # only plotting a few columns, may not be necessary
+    
+    # keeps 1st and 2nd column
+    plt.figure()
+    plt.scatter(points_1[:,0], points_1[:,1], c=db_points)
+    
+    # dbscan and cluster, plot clusters against something else (colors as clusters)
+    # pick and detect 2 other variables, plot against each other
     
     # leave this variable name the same
     
@@ -132,93 +168,92 @@ while location < 1:
     # determine the centers of the clusters
     # what do the numerical values of centers and indexes mean?
     
-    centers = kmeans.cluster_centers_
-    centers = [np.average(centers[i]) for i in range(n_clusters)]
-    print('Centers =',centers)
-    print('Sort Centers =', (np.argsort(centers)))
-    indexes = np.arange(n_clusters)[np.argsort(centers)]
+    # centers = kmeans.cluster_centers_
+    # centers = [np.average(centers[i]) for i in range(n_clusters)]
+    # print('Centers =',centers)
+    # print('Sort Centers =', (np.argsort(centers)))
+    # indexes = np.arange(n_clusters)[np.argsort(centers)]
+    indexes = np.arange(n_clusters_)
     print('indexes =', indexes)
-    print('Colors =',(np.array(colors)[indexes]))
+    # print('Colors =',(np.array(colors)[indexes]))
     
-    # some plots require scaling to prevent squishing
-    # What do the plots show?
+    plt.figure()
+    s = plt.scatter(average, location_of_maximum, c=data['noise'], cmap='gray')
+    plt.colorbar(s)
     
-    # plt.figure()
-    # s = plt.scatter(average, location_of_maximum, c=data['noise'], cmap='gray')
-    # plt.colorbar(s)
+    # noise vs. relative humidity
+    plt.figure()
+    for ii in indexes:
+        plt.scatter(average[y_km == ii], np.array(data['noise'])[y_km == ii],
+                    c=colors[ii], label=ii)
+    plt.xlabel('Average Relative Humidity')
+    plt.ylabel('Percieved Noise')
+    # plt.legend()
     
-    # plt.figure()
-    # for ii in indexes:
-    #     plt.scatter(average[y_km == ii], np.array(data['noise'])[y_km == ii],
-    #                 c=colors[ii], label=ii)
-    # # plt.legend()
+    # average rh's vs. the high values rh's (higher average usually means high
+    # humidities?)
+    plt.figure()
+    for ii in indexes:
+        plt.scatter(average[y_km == ii], maximum[y_km == ii],
+                    c=colors[ii], label=ii)
+        
+    # average rh vs. locations (tied to height/elevation?) lower rh = lower
+    plt.figure()
+    for ii in indexes:
+        plt.scatter(average[y_km == ii], location_of_maximum[y_km == ii],
+                    c=colors[ii], label=ii)
     
-    # plt.figure()
-    # for ii in indexes:
-    #     plt.scatter(average[y_km == ii], maximum[y_km == ii],
-    #                 c=colors[ii], label=ii)
-    
-    # plt.figure()
-    # for ii in indexes:
-    #     plt.scatter(average[y_km == ii], location_of_maximum[y_km == ii],
-    #                 c=colors[ii], label=ii)
-    
-    # plt.figure()
-    # for ii in indexes:
-    #     plt.scatter(location_of_maximum[y_km == ii], np.array(data['noise'])[y_km == ii],
-    #                 c=colors[ii], label=ii)
+    # where max rh is in the array? vs. noise
+    plt.figure()
+    for ii in indexes:
+        plt.scatter(location_of_maximum[y_km == ii], np.array(data['noise'])[y_km == ii],
+                    c=colors[ii], label=ii)
     				
-    # plt.figure()
-    # plt.xlabel('Average')
-    # print('i', indexes)
+    plt.figure()
+    plt.xlabel('Average')
+    plt.ylabel('Noise')
+    print('i', indexes)
     
-    # # indexes backwards
+    print(indexes[::-1])
+    for ii in range(4):
+        plt.scatter(average[y_km == ii], np.array(data['noise'])[y_km == ii],
+                    c=colors[ii], label=ii)
+        print(len(np.array(data['noise'])[y_km == ii]))
     
-    # print(indexes[::-1])
-    # for ii in range(4):
-    #     plt.scatter(average[y_km == ii], np.array(data['noise'])[y_km == ii],
-    #                 c=colors[ii], label=ii)
-    #     print(len(np.array(data['noise'])[y_km == ii]))
-    
-    # plt.figure()
-    # for ii in indexes:
-    #     plt.scatter(maximum[y_km == ii], np.array(data['noise'])[y_km == ii],
-    #                 c=colors[ii], label=ii)
+    plt.figure()
+    for ii in indexes:
+        plt.scatter(maximum[y_km == ii], np.array(data['noise'])[y_km == ii],
+                    c=colors[ii], label=ii)
     
     # tSNE plot attempt
     
     sklearn.manifold.TSNE()
     
-    # tried 'data' then 'points' worked after getting an error with data
+    # use points_1, now have reduced data after tsne, and make clusters colors 
+    # from dbscan
     
-    data_tsne = TSNE(n_components = 2).fit_transform(points)
-    
-    # statement prints right before current file ex: (227, 2) 
-    # how to actually view the plot, what do the numbers mean?
-    # first number only increases, second is dimensions
-    # hue = y was removed from sns scatter after bounds 
+    # learning rate too high = like a ball, too low = compressed w/ outliers
+    data_tsne = TSNE(n_components = 2, perplexity = 30, 
+                     learning_rate = 750).fit_transform(points_1)
     
     print(data_tsne.shape)
     
-    # set colors?
-    
-    palette = sns.color_palette("bright", 10)
-    
     # view the plot with certain parameters
-    # how to change the range?
     
-    sns.scatterplot(data_tsne[:,0], data_tsne[:,1],
-                    legend='full', palette=palette)
+    plt.figure()
+    sns.scatterplot(data_tsne[:,0], data_tsne[:,1], hue = np.array(data['noise']))
     
-    # tested changing range, didn't help
     # plt.axis([-120, 120, -120, 120])
-    
-    # continue the iteration until the final index of the file list is reached
-    
+
     print('Current file =', locations[location])
+    
+    # greater height = less rh
+    print('max rh=',max(rh))
+    # lower temps at higher elevations
+    print('max temp=',max(temp))
     location += 1        
         
-    plt.show()  
+     
         
         
         
