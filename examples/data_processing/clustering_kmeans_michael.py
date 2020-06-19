@@ -87,7 +87,7 @@ while location < 1:
     #### 227 indexes per file ### CHANGE HERE ###
     
     # for i in range(len(data['temperature'])):
-    for i in range(25):
+    for i in range(10):
         # print(len(data['temperature'])) # (227)
         print('CURRENT INDEX:', i)
         # important, goes through the 227 days for each file (line 86)
@@ -115,7 +115,7 @@ while location < 1:
         y_km = kmeans.fit_predict(points)
         y_km_1 = kmeans.fit_predict(points_1)
         
-        graph_number = (i+1)
+        graph_number = i
         
         # amount of unique numbers == clusters, -1 means noise/outlier/not in one
         
@@ -130,6 +130,9 @@ while location < 1:
         # plt.title('Temperature VS. Height')
         
         ### clustered visualization of data with n_clusters ###
+        
+        colors = ['red', 'blue', 'green', 'yellow', 'purple']
+        colors = np.array(colors)
         
         ## TEMPERATURE VS. HEIGHT ###
 
