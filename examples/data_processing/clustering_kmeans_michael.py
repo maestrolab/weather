@@ -87,7 +87,7 @@ while location < 1:
     #### 227 indexes per file ### CHANGE HERE ###
     
     # for i in range(len(data['temperature'])):
-    for i in range(10):
+    for i in range(1):
         # print(len(data['temperature'])) # (227)
         print('CURRENT INDEX:', i)
         # important, goes through the 227 days for each file (line 86)
@@ -178,10 +178,10 @@ while location < 1:
         
         # need to associate noise with certain points
         
-        # sns.scatterplot(data_tsne[:,0], data_tsne[:,1], hue=np.array(data['noise'][:len(points)]))
+        sns.scatterplot(data_tsne[:,0], data_tsne[:,1], hue=np.array(data['noise'][:len(points)]))
         # print(len(data_tsne))
-        # plt.figure()
-        # plt.scatter(data_tsne[:,0], data_tsne[:,1], c=np.array(data['noise'][:len(points)]))
+        plt.figure()
+        plt.scatter(data_tsne[:,0], data_tsne[:,1], c=np.array(data['noise'][:len(points)]))
         
         
         

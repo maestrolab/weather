@@ -88,6 +88,7 @@ while location < 1:
         
         ### DBSCAN CLUSTERING ###
         
+        # normalize the points (preprocessing) scale it back up after?
         points = StandardScaler().fit_transform(points)
         points_1 = StandardScaler().fit_transform(points_1)
         db = DBSCAN(eps = .3, min_samples = 7)
@@ -104,20 +105,19 @@ while location < 1:
         n_noise_1 = list(labels_1).count(-1)
         
         print('Clusters Temp VS. Height =',n_clusters_temp)
-        print('Noise Temp VS. Height =', n_noise_)
+        print('Noise Temp VS. Height =', n_noise_, '%')
         print('Clusters Hum VS. Height =',n_clusters_hum)
-        print('Noise Hum VS. Height =', n_noise_1)
-       
-        
-        # need to specfiy color
-        
-        # only plotting a few columns, may not be necessary
-        
+        print('Noise Hum VS. Height =', n_noise_1, '%')
+     
+        # Scaled temp vs. height   
+     
         plt.figure()
         plt.scatter(points[:,0], points[:,1], c=db_temp)
         plt.xlabel('Normalized Height')
         plt.ylabel('Normalized Temperature')
         plt.title('DBSCAN Temperature VS. Height, File %i' % int(current_file) +', Index %i' % i) 
+        
+        # Scaled hum vs. height
         
         plt.figure()
         plt.scatter(points_1[:,0], points_1[:,1], c=db_hum)
