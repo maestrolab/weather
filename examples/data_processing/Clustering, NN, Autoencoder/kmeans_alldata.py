@@ -103,14 +103,8 @@ while location < len(locations):
  
     profiles += len(temp)   
  
-    # max elevation from weather files == 5088.582677165354
-
-    # noise into all one list
-    
-    # for i in range(len(noise)):
-    #     n1_list.append(noise[i])
-    #     if noise[i] >= 80:
-    #         loud_counter += 1
+    # max elevation from weather files == 5088.582677165354 (used as starting 
+    # interpolation height or can use minimum HAG from profile)
         
     # x is day, i is data point within the day
     for x in range(len(temp)):
@@ -127,7 +121,7 @@ while location < len(locations):
             sub_hum= []    
             
      ### interpolation, extrapolation, and visualization
-     # stands for interpolated and respective data value
+     # int stands for interpolated and respective data value
     
     int_height = []
     int_temp = []
@@ -163,6 +157,7 @@ while location < len(locations):
         x1_new = np.linspace(5088, 50000, 200)
         y1_new = f_1(x1_new)
         for m in range(len(y1_new)):
+            # can't have humidity less than 0 and greater than 100
             if y1_new[m] < 0:
                     y1_new[m] = 0
                     breaker = 1
@@ -179,8 +174,7 @@ while location < len(locations):
         int_temp.append(y_new)
         int_hum.append(y1_new)
         
-        # noise thing moved to here
-        # this should completely change data
+        # correctly associated noise value with profile here
         
         n1_list.append(noise[i])
         if noise[i] >= 80:
@@ -202,6 +196,7 @@ while location < len(locations):
         for i in range(len(int_temp[x])):
             sub_1.append(int_temp[x][i])
             sub_2.append(int_hum[x][i])
+        ### first few columns of data are features
         features.append(np.average(int_temp[x]))
         features.append(np.average(int_hum[x]))
         features.append(max(int_hum[x]))
@@ -215,6 +210,12 @@ while location < len(locations):
         main_1.append(sub_3)
     
     location += 1
+
+### all code before this is used to format the data correctly
+### has to do this every run so may be easier to write to a .csv then
+### read it in; however, with this code here you can change what is added to 
+### the data easily and don't need a file to read in the data, you just need
+### the weather data files
 
 #########################################
 ### CLUSTERING, SPECIFY CLUSTERS HERE ###
@@ -287,7 +288,7 @@ for m in range(len(n_clusters)):
              for z in range(200):
                  if c_list[x][i][z+200+len(features)] >= max_hum:
                      max_hum = c_list[x][i][z+200+len(features)]
-         
+                                            
          main_maxh.append(sub_maxh)
          sub_maxh = []
          avg_maxh = np.average(main_maxh[x])
