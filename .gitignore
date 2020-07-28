@@ -117,3 +117,4 @@ matlab/nctool-box-1.1.3
 *.input
 */sBOOM
 data/noise
+!sboom_babysitter.py
