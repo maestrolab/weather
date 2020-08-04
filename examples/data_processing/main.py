@@ -11,24 +11,23 @@ import csv
 import subprocess as sp
 
 ##################################################################
-mode = 't' # 't' for true and 'p' for predictions
+mode = 'p' # 't' for true and 'p' for predictions
+f = open('mode.txt','w')
+f.write(mode) 
+f.close()  
 
-if mode =='p':
-    raw_data = pd.read_csv("./autoencoder_results_predictions.csv",skiprows=0) 
-elif mode=='t':
-    raw_data = pd.read_csv("./autoencoder_results_true.csv",skiprows=0)  
-raw_data = pd.DataFrame.to_numpy(raw_data)
-elevations = raw_data[:,3]
+# if mode =='p':
+    # raw_data = pd.read_csv("./autoencoder_results_predictions.csv",skiprows=0) 
+# elif mode=='t':
+    # raw_data = pd.read_csv("./autoencoder_results_true.csv",skiprows=0)  
+# raw_data = pd.DataFrame.to_numpy(raw_data)
+# elevations = raw_data[:,3]
 
-for profile in range(3593,len(elevations)):
+for profile in range(0,13260):
     print("Profile: ",profile+1)
     f = open('profile.txt','w')
     f.write('%1.0f' % (profile)) 
     f.close()  
-    
-    f = open('mode.txt','w')
-    f.write(mode) 
-    f.close()  
-    
+        
     # run babysitter
     ps = sp.run('python ./sboom_babysitter.py', cwd = './', shell=True)
