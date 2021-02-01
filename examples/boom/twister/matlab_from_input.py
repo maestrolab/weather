@@ -3,7 +3,7 @@ from weather.boom import read_input
 from weather.scraper.twister import process_data
 import platform
 
-alt_ft = 50000.
+alt_ft = 53200.
 atmosphere_input = './presb.input'
 # run_method = 'EquivArea' # or 'panair'
 
@@ -20,7 +20,7 @@ if platform.system() == 'Linux' or platform.system() == 'Darwin':
     SBOOM_EXE = 'sboom_linux'
 elif platform.system() == 'Windows':
     PANAIR_EXE = 'panair.exe'
-    SBOOM_EXE = 'sboom_windows.dat.allow'
+    SBOOM_EXE = 'sboom.exe'
 else:
     raise RuntimeError("platfrom not recognized")
 
@@ -35,7 +35,10 @@ elif run_method == 'EquivArea':
     # Run (equivalent area method)
     axiebump = EquivArea(CASE_DIR, SBOOM_EXE, altitude=alt_ft,
                          deformation=deformation,
-                         atmosphere_input=atmosphere_input)
+                         area_filename = 'x_59_ATA_dp_Pinf_vs_X_Probe5_trim_TRIMMED.eqarea',
+                         atmosphere_input=atmosphere_input,
+                         ref_length = 27.432, r_over_l = 5,
+                         mach = 1.4, phi=0) # check Mach number and area filename every time!!!
     loudness = axiebump.run(bump_inputs)
 else:
     raise RuntimeError("evaluation method not recognized")
