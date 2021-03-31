@@ -8,6 +8,7 @@ try:
     FID = open("./eqarea_filename.txt","r")
     area_filename = FID.read()
     # delete file (eventually we can remove this, but this will help us keep consistent with older versions of this code)
+    FID.close()
     os.remove("./eqarea_filename.txt")
 except: # the file might not exist (this is a new feature)
     # use the "default" equivalent area distribution

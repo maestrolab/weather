@@ -8,11 +8,13 @@ try:
     FID = open("./eqarea_filename.txt","r")
     area_filename = FID.read()
     # delete file (eventually we can remove this, but this will help us keep consistent with older versions of this code)
+    FID.close()
     os.remove("./eqarea_filename.txt")
 except: # the file might not exist (this is a new feature)
     # use the "default" equivalent area distribution
     area_filename = 'x_59_ATA_dp_Pinf_vs_X_Probe5_trim_TRIMMED.eqarea'
 print("Equivalent Area File: ",area_filename)
+
 
 alt_ft = 53200. # at some point, this should be an input too (along with Mach, phi, ref_length, and maybe r_over_l)
 #atmosphere_input = './presb.input'
