@@ -15,8 +15,23 @@ except: # the file might not exist (this is a new feature)
     area_filename = 'x_59_ATA_dp_Pinf_vs_X_Probe5_trim_TRIMMED.eqarea'
 print("Equivalent Area File: ",area_filename)
 
+# define Mach number from eqarea_filename
+try:
+    # look for the word "Mach" in the filename
+    index = area_filename.find("Mach")
+    M = area_filename[index+4:] # remove everything before the word "Mach"
+    # look for "_Alpha" in the filename
+    index = M.find("_Alpha")
+    M = M[:index] # remove everything after and including "_Alpha"
+    # finally turn it into a number
+    M = float(M)
+    print("Mach detected from filename = {}".format(M))
+except:
+    M = 1.6 # 1.6 for 25D; 1.4 for X59
+    print("Assuming Mach = {}".format(M))
 
-alt_ft = 53200. # at some point, this should be an input too (along with Mach, phi, ref_length, and maybe r_over_l)
+# altitude of 25D is usually 50kft. In Lazzara SciTech2019 51.7kft was used. Altitude of X59 is 53.2kft.
+alt_ft = 51700. # at some point, this should be an input too (along with Mach, phi, ref_length, and maybe r_over_l)
 #atmosphere_input = './presb.input'
 # run_method = 'EquivArea' # or 'panair'
 
@@ -49,8 +64,8 @@ elif run_method == 'EquivArea':
     axiebump = EquivArea(CASE_DIR, SBOOM_EXE, altitude=alt_ft,
                          deformation=deformation,
                          area_filename = area_filename,
-                         ref_length = 27.432, r_over_l = 5,
-                         mach= 1.4, phi=0) # check Mach number and area filename every time!!!
+                         ref_length = 32.92, r_over_l = 5,  # for X59: ref_length = 27.432, for 25D: ref_length = 32.92,
+                         mach= M, phi=0) # check Mach number and area filename every time!!!
     loudness = axiebump.run(bump_inputs)
 else:
     raise RuntimeError("evaluation method not recognized")
